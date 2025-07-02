@@ -317,6 +317,55 @@ class UndirectedHypergraph(object):
         for node in nodes:
             self.remove_node(node)
 
+    def trim_node(self, node):
+        """Removes a node from the hypergraph. Modifies hyperedges which contain 
+        the trimmed node that they no longer include 
+        the trimmed node. If a hyperedge has solely the trimmed node,
+        that hyperedge is removed.
+        
+        Note: hyperedges modified this way will have different IDs than before
+        
+        Examples:
+        ::
+        
+            >>> H = UndirectedHypergraph()
+            >>> node_list = ['A', 'B', 'C', 'D']
+            >>> H.add_nodes(node_list)
+            >>> H.add_hyperedge('A','B', 'C','D'])
+            >>> H.trim_node('A')
+        """
+    
+        s = self.get_star(node)
+        remove_set = set()
+    
+        def get_attrs(H, hyperedge):
+            #copies the attribute dictionary of a hyperedge except for the head and tail
+            new_attrs = {}
+            old_attrs = H.get_hyperedge_attributes(hyperedge)
+        
+            for key in old_attrs:
+                if key not in {'head', 'tail'}:
+                    new_attrs[key] = old_attrs[key]
+            return new_attrs
+    
+        for hedge in s:
+            nodes = set(self.get_hyperedge_nodes(hedge))
+            if len(nodes) > 1:
+                new_nodes = nodes - {node}
+                attrs = get_attrs(self, hedge)
+                self.add_hyperedge(new_nodes, attrs)
+            remove_set.add(hedge)
+
+        for hedge in remove_set:
+            self.remove_hyperedge(hedge)
+            
+        self.remove_node(node)
+    
+    def trim_nodes(self, nodes):
+        """Trims multiple nodes from the hypergraph (see trim_node() for details)"""
+        for node in nodes:
+            self.trim_node(node)
+
     def get_node_set(self):
         # Note: Code and comments unchanged from DirectedHypergraph
         """Returns the set of nodes that are currently in the hypergraph.

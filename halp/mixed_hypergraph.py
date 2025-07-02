@@ -387,7 +387,7 @@ class MixedHypergraph(object):
 
     # WIP convert
     def trim_node(self, node):
-        """Removes a node from the hypergraph. Modifies hypredges with the 
+        """Removes a node from the hypergraph. Modifies hyperedges with the 
         trimmed node in their head or tail so that they no longer include 
         the trimmed node. If a hyperedge has solely the trimmed node in its
         head or tail, that hyperedge is removed.
