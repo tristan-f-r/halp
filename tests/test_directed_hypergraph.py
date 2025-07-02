@@ -917,7 +917,9 @@ def test_copy(DirectedHypergraphLike):
     assert new_H._predecessors == H._predecessors
 
 
-def test_read_and_write(DirectedHypergraphLike):
+# This specifically tests DirectedHypergraph#read and DirectedHypergraph#write.
+# Please see test_mixed_hypergraph for the mixed hypergraph r/w test.
+def test_read_and_write():
     # Try writing the following hypergraph to a file
     node_a = 'A'
     node_b = 'B'
@@ -929,7 +931,7 @@ def test_read_and_write(DirectedHypergraphLike):
 
     node_d = 'D'
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -953,7 +955,7 @@ def test_read_and_write(DirectedHypergraphLike):
     H.write("test_directed_read_and_write.txt")
 
     # Try reading the hypergraph that was just written into a new hypergraph
-    new_H = DirectedHypergraphLike()
+    new_H = DirectedHypergraph()
     new_H.read("test_directed_read_and_write.txt")
 
     assert H._node_attributes.keys() == new_H._node_attributes.keys()
@@ -980,7 +982,7 @@ def test_read_and_write(DirectedHypergraphLike):
     remove("test_directed_read_and_write.txt")
 
     # Try reading an invalid hypergraph file
-    invalid_H = DirectedHypergraphLike()
+    invalid_H = DirectedHypergraph()
     try:
         invalid_H.read("tests/data/invalid_directed_hypergraph.txt")
         assert False
@@ -1535,62 +1537,62 @@ def test_get_induced_subhypergraph(DirectedHypergraphLike):
         assert set(head) - induce_on_nodes == set()
         assert H.has_hyperedge(tail, head)
 
-
-def test_is_B_hypergraph(DirectedHypergraphLike):
-    H = DirectedHypergraphLike()
+# A B-hypergraph is a property only shared to DirectedHypergraphs.
+def test_is_B_hypergraph():
+    H = DirectedHypergraph()
     H.read("tests/data/basic_directed_hypergraph.txt")
 
     assert not H.is_B_hypergraph()
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     add_hyperedge(H, ['a', 'b'], ['c'])
     assert H.is_B_hypergraph()
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     add_hyperedge(H, ['x'], ['y', 'z'])
     assert not H.is_B_hypergraph()
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     add_hyperedge(H, ['a', 'b'], ['c'])
     add_hyperedge(H, ['x'], ['y', 'z'])
     assert not H.is_B_hypergraph()
 
-
-def test_is_F_hypergraph(DirectedHypergraphLike):
-    H = DirectedHypergraphLike()
+# A B-hypergraph is a property only shared to DirectedHypergraphs.
+def test_is_F_hypergraph():
+    H = DirectedHypergraph()
     H.read("tests/data/basic_directed_hypergraph.txt")
 
     assert not H.is_F_hypergraph()
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     add_hyperedge(H, ['a', 'b'], ['c'])
     assert not H.is_F_hypergraph()
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     add_hyperedge(H, ['x'], ['y', 'z'])
     assert H.is_F_hypergraph()
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     add_hyperedge(H, ['a', 'b'], ['c'])
     add_hyperedge(H, ['x'], ['y', 'z'])
     assert not H.is_F_hypergraph()
 
-
-def test_is_BF_hypergraph(DirectedHypergraphLike):
-    H = DirectedHypergraphLike()
+# A B-hypergraph is a property only shared to DirectedHypergraphs.
+def test_is_BF_hypergraph():
+    H = DirectedHypergraph()
     H.read("tests/data/basic_directed_hypergraph.txt")
 
     assert not H.is_BF_hypergraph()
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     add_hyperedge(H, ['a', 'b'], ['c'])
     assert H.is_BF_hypergraph()
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     add_hyperedge(H, ['x'], ['y', 'z'])
     assert H.is_BF_hypergraph()
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     add_hyperedge(H, ['a', 'b'], ['c'])
     add_hyperedge(H, ['x'], ['y', 'z'])
     assert H.is_BF_hypergraph()

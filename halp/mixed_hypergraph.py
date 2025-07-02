@@ -1121,55 +1121,6 @@ class MixedHypergraph(object):
 
         return set(self._predecessors[frozen_head].values())
 
-    # TODO: Make this a property of the hypergraph that stays updated with
-    # the hypergraph, for constant-time calls.
-    def is_B_hypergraph(self):
-        """Indicates whether the hypergraph is a B-hypergraph.
-        In a B-hypergraph, all hyperedges are B-hyperedges -- that is, every
-        hyperedge has exactly one node in the head.
-
-        :returns: bool -- True iff the hypergraph is a B-hypergraph.
-
-        """
-        for hyperedge_id in self._hyperedge_attributes:
-            head = self.get_hyperedge_head(hyperedge_id)
-            if len(head) > 1:
-                return False
-        return True
-
-    # TODO: Make this a property of the hypergraph that stays updated with
-    # the hypergraph, for constant-time calls.
-    def is_F_hypergraph(self):
-        """Indicates whether the hypergraph is an F-hypergraph.
-        In an F-hypergraph, all hyperedges are F-hyperedges -- that is, every
-        hyperedge has exactly one node in the tail.
-
-        :returns: bool -- True iff the hypergraph is an F-hypergraph.
-
-        """
-        for hyperedge_id in self._hyperedge_attributes:
-            tail = self.get_hyperedge_tail(hyperedge_id)
-            if len(tail) > 1:
-                return False
-        return True
-
-    # TODO: Make this a property of the hypergraph that stays updated with
-    # the hypergraph, for constant-time calls.
-    def is_BF_hypergraph(self):
-        """Indicates whether the hypergraph is a BF-hypergraph.
-        A BF-hypergraph consists of only B-hyperedges and F-hyperedges.
-        See "is_B_hypergraph" or "is_F_hypergraph" for more details.
-
-        :returns: bool -- True iff the hypergraph is an F-hypergraph.
-
-        """
-        for hyperedge_id in self._hyperedge_attributes:
-            tail = self.get_hyperedge_tail(hyperedge_id)
-            head = self.get_hyperedge_head(hyperedge_id)
-            if len(tail) > 1 and len(head) > 1:
-                return False
-        return True
-
     def copy(self):
         """Creates a new DirectedHypergraph object with the same node and
         hyperedge structure.
@@ -1301,23 +1252,38 @@ class MixedHypergraph(object):
 
     # TODO: make reading more extensible (attributes, variable ordering, etc.)
     def read(self, file_name, delim=',', sep='\t'):
-        """Read a directed hypergraph from a file, where nodes are
+        """Read a hypergraph from a file, where nodes are
         represented as strings.
         Each column is separated by "sep", and the individual
         tail nodes and head nodes are delimited by "delim".
         The header line is currently ignored, but columns should be of
         the format:
-        tailnode1[delim]..tailnodeM[sep]headnode1[delim]..headnodeN[sep]weight
+        tailnode1[delim]..tailnodeM[sep]headnode1[delim]..headnodeN[sep]direction[sep]weight
 
+        Direction is required and must be (case-insensitive) U for undirected
+        hyperedge or D for directed hyperedge. In the case of an undirected hyperedge,
+        the 'tail' and 'head' nodes are added to the same nodes set to be added.
+        
         As a concrete example, an arbitrary line with delim=',' and
         sep='    ' (4 spaces) may look like:
         ::
 
-            x1,x2    x3,x4,x5    12
+            x1,x2    x3,x4,x5    D    12
 
-        which defines a hyperedge of weight 12 from a tail set containing
-        nodes "x1" and "x2" to a head set containing nodes "x3", "x4", and "x5"
+        which defines a directed hyperedge of weight 12 from a tail set containing
+        nodes "x1" and "x2" to a head set containing nodes "x3", "x4", and "x5."
 
+        An undirected hyperedge can also leave the head or tail set empty. As an example,
+        the following undirected hyperedge representations are equivalent:
+        ::
+
+            x1    x2,x3    U
+            x1,x2    x2,x3    U
+            x1,x2,x3        U
+                x1,x2,x3    U
+
+        To read in a specific direction instead, use the other hypergraph type first,
+        then convert it into a mixed hypergraph.
         """
         in_file = open(file_name, 'r')
 
@@ -1332,19 +1298,23 @@ class MixedHypergraph(object):
                 continue
 
             words = line.split(sep)
-            if not (2 <= len(words) <= 3):
+            if not (3 <= len(words) <= 4):
                 raise \
                     IOError("Line {} ".format(line_number) +
                             "contains {} ".format(len(words)) +
-                            "columns -- must contain only 2 or 3.")
+                            "columns -- must contain only 3 or 4.")
 
             tail = set(words[0].split(delim))
             head = set(words[1].split(delim))
+            direction = words[2]
             if len(words) == 3:
                 weight = float(words[2].split(delim)[0])
             else:
                 weight = 1
-            self.add_hyperedge(tail, head, weight=weight)
+            if direction.upper() == 'D':
+                self.add_directed_hyperedge(tail, head, weight=weight)
+            elif direction.upper() == 'U':
+                self.add_undirected_hyperedge(tail | head, weight=weight)
 
             line_number += 1
 

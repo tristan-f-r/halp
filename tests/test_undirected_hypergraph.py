@@ -689,8 +689,10 @@ def test_copy(UndirectedHypergraphLike):
     assert new_H._node_set_to_hyperedge == H._node_set_to_hyperedge
 
 
-def test_read_and_write(UndirectedHypergraphLike):
-    # Try writing the following hypergraph to a file
+# This specifically tests UndirectedHypergraph#read and UndirectedHypergraph#write.
+# Please see test_mixed_hypergraph for the mixed hypergraph r/w test.
+def test_read_and_write():
+    # Try writing the following hypergraph to a file.
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -710,14 +712,14 @@ def test_read_and_write(UndirectedHypergraphLike):
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraphLike()
+    H = UndirectedHypergraph()
     hyperedge_names = \
         add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     H.write("test_undirected_read_and_write.txt")
 
     # Try reading the hypergraph that was just written into a new hypergraph
-    new_H = UndirectedHypergraphLike()
+    new_H = UndirectedHypergraph()
     new_H.read("test_undirected_read_and_write.txt")
 
     assert H._node_attributes.keys() == new_H._node_attributes.keys()
@@ -741,7 +743,7 @@ def test_read_and_write(UndirectedHypergraphLike):
     remove("test_undirected_read_and_write.txt")
 
     # Try reading an invalid hypergraph file
-    invalid_H = UndirectedHypergraphLike()
+    invalid_H = UndirectedHypergraph()
     try:
         invalid_H.read("tests/data/invalid_undirected_hypergraph.txt")
         assert False
