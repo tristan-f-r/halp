@@ -755,6 +755,27 @@ class MixedHypergraph(object):
 
         return hyperedge_ids
 
+    def is_hyperedge_id_undirected(self, hyperedge_id):
+        """Determines if a hyperedge id is directed.
+        
+        :param hyperedge_id: ID of the hyperedge whose directionality is
+                            being checked.
+        
+        :returns: bool -- true iff the hyperedge whose id is hyperedge_id is directed."""
+        return self.has_hyperedge_id(hyperedge_id) and \
+            "__frozen_nodes" in self._hyperedge_attributes[hyperedge_id]
+
+
+    def is_hyperedge_id_directed(self, hyperedge_id):
+        """Determines if a hyperedge id is directed.
+        
+        :param hyperedge_id: ID of the hyperedge whose directionality is
+                            being checked.
+        
+        :returns: bool -- true iff the hyperedge whose id is hyperedge_id is directed."""
+        return self.has_hyperedge_id(hyperedge_id) and \
+            not self.is_hyperedge_id_undirected(hyperedge_id)
+
     def remove_hyperedge(self, hyperedge_id):
         """Removes a hyperedge and its attributes from the hypergraph.
 
@@ -779,7 +800,7 @@ class MixedHypergraph(object):
 
         hyperedge_attribute = self._hyperedge_attributes[hyperedge_id]
 
-        if "__frozen_nodes" in hyperedge_attribute:
+        if self.is_hyperedge_id_undirected(hyperedge_id):
             frozen_nodes = hyperedge_attribute["__frozen_nodes"]
             # We have an undirected hyperedge
             # Remove this hyperedge from the star of every node in the hyperedge
@@ -1322,36 +1343,60 @@ class MixedHypergraph(object):
 
     # TODO: make writing more extensible (attributes, variable ordering, etc.)
     def write(self, file_name, delim=',', sep='\t'):
-        """Write a directed hypergraph to a file, where nodes are
+        """Write a mixed hypergraph to a file, where nodes are
         represented as strings.
         Each column is separated by "sep", and the individual
         tail nodes and head nodes are delimited by "delim".
         The header line is currently ignored, but columns should be of
         the format:
-        tailnode1[delim]..tailnodeM[sep]headnode1[delim]..headnodeN[sep]weight
+        tailnode1[delim]..tailnodeM[sep]headnode1[delim]..headnodeN[sep]direction[sep]weight
 
         As a concrete example, an arbitrary line with delim=',' and
         sep='    ' (4 spaces) may look like:
         ::
 
-            x1,x2    x3,x4,x5    12
+            x1,x2    x3,x4,x5    D    12
 
-        which defines a hyperedge of weight 12 from a tail set containing
-        nodes "x1" and "x2" to a head set containing nodes "x3", "x4", and "x5"
+        which defines a directed hyperedge of weight 12 from a tail set containing
+        nodes "x1" and "x2" to a head set containing nodes "x3", "x4", and "x5",
+
+        For undirected hyperedges, `write` prefers to add the entire `nodes` set to the
+        tail column instead. For example:
+        ::
+
+            x1,x2,x3        U    15
 
         """
         out_file = open(file_name, 'w')
 
         # write first header line
-        out_file.write("tail" + sep + "head" + sep + "weight\n")
+        out_file.write("tail" + sep + "head" + sep + "direction" + sep + "weight\n")
 
         for hyperedge_id in self.get_hyperedge_id_set():
             line = ""
-            # Write each tail node to the line, separated by delim
-            for tail_node in self.get_hyperedge_tail(hyperedge_id):
-                line += tail_node + delim
-            # Remove last (extra) delim
-            line = line[:-1]
+            if self.is_hyperedge_id_undirected(hyperedge_id):
+                # Write each node to the line, separated by delim
+                for node in self.get_hyperedge_nodes(hyperedge_id):
+                    line += node + delim
+                # Remove last (extra) delim
+                line = line[:-1]
+                # Add extra sep to account for no head nodes
+                line += sep
+            else:
+                # Write each tail node to the line, separated by delim
+                for tail_node in self.get_hyperedge_tail(hyperedge_id):
+                    line += tail_node + delim
+                # Remove last (extra) delim
+                line = line[:-1]
+
+            # Add sep between columns
+            line += sep
+
+            # Add the corresponding direction letter
+            if self.is_hyperedge_id_undirected(hyperedge_id):
+                line += "U"
+            else:
+                line += "D"
 
             # Add sep between columns
             line += sep
