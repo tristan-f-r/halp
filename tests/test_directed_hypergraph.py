@@ -1403,7 +1403,7 @@ def test_check_node_consistency(DirectedHypergraphLike):
 
     # Check 5.3.1
     new_H = H.copy()
-    add_hyperedge(new_H, H, "X", "Y")
+    add_hyperedge(new_H, "X", "Y")
     del new_H._node_attributes["X"]
     del new_H._forward_star["X"]
     del new_H._forward_star["Y"]
@@ -1419,7 +1419,7 @@ def test_check_node_consistency(DirectedHypergraphLike):
 
     # Check 5.3.2
     new_H = H.copy()
-    add_hyperedge(new_H, H, "X", "Y")
+    add_hyperedge(new_H, "X", "Y")
     del new_H._node_attributes["Y"]
     del new_H._forward_star["X"]
     del new_H._forward_star["Y"]
