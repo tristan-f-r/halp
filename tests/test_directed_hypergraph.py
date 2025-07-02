@@ -24,9 +24,17 @@ def add_hyperedges(graph, hyperedges, attr_dict=None, **attr):
     Adds hyperedges to an instance produced by DirectedHypergraphLike.
     """
     if type(graph) == DirectedHypergraph:
-        return graph. add_hyperedges(hyperedges, attr_dict, **attr)
+        return graph.add_hyperedges(hyperedges, attr_dict, **attr)
     elif type(graph) == MixedHypergraph:
         return graph.add_directed_hyperedges(hyperedges, attr_dict, **attr)
+    else:
+        raise ValueError()
+
+def get_hyperedge_id(graph, tail, head):
+    if type(graph) == DirectedHypergraph:
+        return graph.get_hyperedge_id(tail, head)
+    elif type(graph) == MixedHypergraph:
+        return graph.get_directed_hyperedge_id(tail, head)
     else:
         raise ValueError()
 
@@ -489,12 +497,12 @@ def test_get_hyperedge_id(DirectedHypergraphLike):
     hyperedge_names = \
         add_hyperedges(H, hyperedges, common_attrib, color='white')
 
-    assert H.get_hyperedge_id(tail1, head1) == 'e1'
-    assert H.get_hyperedge_id(tail2, head2) == 'e2'
-    assert H.get_hyperedge_id(tail3, head3) == 'e3'
+    assert get_hyperedge_id(H, tail1, head1) == 'e1'
+    assert get_hyperedge_id(H, tail2, head2) == 'e2'
+    assert get_hyperedge_id(H, tail3, head3) == 'e3'
 
     try:
-        H.get_hyperedge_id(tail1, head2)
+        get_hyperedge_id(H, tail1, head2)
         assert False
     except ValueError:
         pass

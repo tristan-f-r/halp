@@ -15,7 +15,7 @@ def add_hyperedge(graph, nodes, attr_dict=None, **attr):
     if type(graph) == UndirectedHypergraph:
         return graph.add_hyperedge(nodes, attr_dict, **attr)
     elif type(graph) == MixedHypergraph:
-        return graph.add_directed_hyperedge(nodes, attr_dict, **attr)
+        return graph.add_undirected_hyperedge(nodes, attr_dict, **attr)
     else:
         raise ValueError()
 
@@ -27,6 +27,17 @@ def add_hyperedges(graph, hyperedges, attr_dict=None, **attr):
         return graph.add_hyperedges(hyperedges, attr_dict, **attr)
     elif type(graph) == MixedHypergraph:
         return graph.add_undirected_hyperedges(hyperedges, attr_dict, **attr)
+    else:
+        raise ValueError()
+
+def get_hyperedge_id(graph, nodes):
+    """
+    Adds hyperedges to an instance produced by UndirectedHypergraphLike.
+    """
+    if type(graph) == UndirectedHypergraph:
+        return graph.get_hyperedge_id(nodes)
+    elif type(graph) == MixedHypergraph:
+        return graph.get_undirected_hyperedge_id(nodes)
     else:
         raise ValueError()
 
@@ -380,12 +391,12 @@ def test_get_hyperedge_id(UndirectedHypergraphLike):
     hyperedge_names = \
         add_hyperedges(H, hyperedges, common_attrib, color='white')
 
-    assert H.get_hyperedge_id(nodes1) == 'e1'
-    assert H.get_hyperedge_id(nodes2) == 'e2'
-    assert H.get_hyperedge_id(nodes3) == 'e3'
+    assert get_hyperedge_id(H, nodes1) == 'e1'
+    assert get_hyperedge_id(H, nodes2) == 'e2'
+    assert get_hyperedge_id(H, nodes3) == 'e3'
 
     try:
-        H.get_hyperedge_id(set([node_a, node_b, node_c, node_d]))
+        get_hyperedge_id(H, set([node_a, node_b, node_c, node_d]))
         assert False
     except ValueError:
         pass

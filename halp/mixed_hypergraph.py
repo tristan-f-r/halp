@@ -897,9 +897,37 @@ class MixedHypergraph(object):
         """
         return iter(self._hyperedge_attributes)
 
+    def get_undirected_hyperedge_id(self, nodes):
+        """From a set of nodes, returns the ID of the undirected hyperedge
+        that this set comprises.
+
+        :param nodes: iterable container of references to nodes in the
+                    the hyperedge to be added
+        :returns: str -- ID of the hyperedge that has that the specified
+                node set comprises.
+        :raises: ValueError -- No such hyperedge exists.
+
+        Examples:
+        ::
+
+            >>> H = MixedHypergraph()
+            >>> hyperedge_list = (["A", "B", "C"],
+                                  ("A", "D"),
+                                  set(["B", "D"]))
+            >>> hyperedge_ids = H.add_undirected_hyperedges(hyperedge_list)
+            >>> x = H.get_undirected_hyperedge_id(["A", "B", "C"])
+
+        """
+        frozen_nodes = frozenset(nodes)
+
+        if not self.has_undirected_hyperedge(frozen_nodes):
+            raise ValueError("No such hyperedge exists.")
+
+        return self._node_set_to_hyperedge[frozen_nodes]
+
     def get_directed_hyperedge_id(self, tail, head):
-        """From a tail and head set of nodes, returns the ID of the hyperedge
-        that these sets comprise.
+        """From a tail and head set of nodes, returns the ID of the directed
+        hyperedge that these sets comprise.
 
         :param tail: iterable container of references to nodes in the
                     tail of the hyperedge to be added
@@ -912,12 +940,12 @@ class MixedHypergraph(object):
         Examples:
         ::
 
-            >>> H = DirectedHypergraph()
+            >>> H = MixedHypergraph()
             >>> hyperedge_list = (["A"], ["B", "C"]),
                                   (("A", "B"), ("C"), {weight: 2}),
                                   (set(["B"]), set(["A", "C"])))
-            >>> hyperedge_ids = H.add_hyperedges(hyperedge_list)
-            >>> x = H.get_hyperedge_id(["A"], ["B", "C"])
+            >>> hyperedge_ids = H.add_directed_hyperedges(hyperedge_list)
+            >>> x = H.get_directed_hyperedge_id(["A"], ["B", "C"])
 
         """
         frozen_tail = frozenset(tail)
