@@ -58,7 +58,7 @@ class MixedHypergraph(object):
     """
 
     def __init__(self):
-        """Constructor for the DirectedHypergraph class.
+        """Constructor for the MixedHypergraph class.
         Initializes all internal data structures used for the rapid
         execution of most of the fundamental hypergraph queries.
 
@@ -385,7 +385,6 @@ class MixedHypergraph(object):
         for node in nodes:
             self.remove_node(node)
 
-    # WIP convert
     def trim_node(self, node):
         """Removes a node from the hypergraph. Modifies hyperedges with the 
         trimmed node in their head or tail so that they no longer include 
@@ -516,8 +515,6 @@ class MixedHypergraph(object):
         """
         self._current_hyperedge_id += 1
         return "e" + str(self._current_hyperedge_id)
-
-    # ------------------------------------------ WIP
 
     def add_undirected_hyperedge(self, nodes, attr_dict=None, **attr):
         """Adds an undirected hyperedge to the hypergraph, along with any
@@ -863,7 +860,7 @@ class MixedHypergraph(object):
         Examples:
         ::
 
-            >>> H = DirectedHypergraph()
+            >>> H = MixedHypergraph()
             >>> hyperedge_list = ((["A"], ["B", "C"]),
                                   (("A", "B"), ("C"), {'weight': 2}),
                                   (set(["B"]), set(["A", "C"])))
@@ -875,7 +872,6 @@ class MixedHypergraph(object):
             self.remove_hyperedge(hyperedge_id)
 
     def has_undirected_hyperedge(self, nodes):
-        # Note: Code and comments unchanged from DirectedHypergraph
         """Given a set of nodes, returns whether there is a hyperedge in the
         hypergraph that is precisely composed of those nodes.
 
@@ -1003,11 +999,11 @@ class MixedHypergraph(object):
         Examples:
         ::
 
-            >>> H = DirectedHypergraph()
+            >>> H = MixedHypergraph()
             >>> hyperedge_list = (["A"], ["B", "C"]),
                                   (("A", "B"), ("C"), {weight: 2}),
                                   (set(["B"]), set(["A", "C"])))
-            >>> hyperedge_ids = H.add_hyperedges(hyperedge_list)
+            >>> hyperedge_ids = H.add_directed_hyperedges(hyperedge_list)
             >>> attribute = H.get_hyperedge_attribute(hyperedge_ids[0])
 
         """
@@ -1155,24 +1151,24 @@ class MixedHypergraph(object):
         return set(self._predecessors[frozen_head].values())
 
     def copy(self):
-        """Creates a new DirectedHypergraph object with the same node and
+        """Creates a new MixedHypergraph object with the same node and
         hyperedge structure.
         Copies of the nodes' and hyperedges' attributes are stored
         and used in the new hypergraph.
 
-        :returns: DirectedHypergraph -- a new hypergraph that is a copy of
+        :returns: MixedHypergraph -- a new hypergraph that is a copy of
                 the current hypergraph
 
         """
         return self.__copy__()
 
     def __copy__(self):
-        """Creates a new DirectedHypergraph object with the same node and
+        """Creates a new MixedHypergraph object with the same node and
         hyperedge structure.
         Copies of the nodes' and hyperedges' attributes are stored
         and used in the new hypergraph.
 
-        :returns: DirectedHypergraph -- a new hypergraph that is a copy of
+        :returns: MixedHypergraph -- a new hypergraph that is a copy of
                 the current hypergraph
 
         """
@@ -1275,7 +1271,7 @@ class MixedHypergraph(object):
         of the provided nodes.
 
         :param nodes: the set of nodes to find the induced subhypergraph of.
-        :returns: DirectedHypergraph -- the subhypergraph induced on the
+        :returns: MixedHypergraph -- the subhypergraph induced on the
                 provided nodes.
 
         """
@@ -1510,7 +1506,7 @@ class MixedHypergraph(object):
                     raise ValueError(
                         'Consistency Check 1.7 Failed: hyperedge ' +
                         'id ' + hyperedge_id + ' is not in the ' +
-                        'backward star of head node ' + tail_node)
+                        'backward star of head node ' + head_node)
 
     def _check_node_attributes_consistency(self):
         """Consistency Check 2: consider all nodes listed in

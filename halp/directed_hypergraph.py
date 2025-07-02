@@ -1249,7 +1249,7 @@ class DirectedHypergraph(object):
                     raise ValueError(
                         'Consistency Check 1.7 Failed: hyperedge ' +
                         'id ' + hyperedge_id + ' is not in the ' +
-                        'backward star of head node ' + tail_node)
+                        'backward star of head node ' + head_node)
 
     def _check_node_attributes_consistency(self):
         """Consistency Check 2: consider all nodes listed in
