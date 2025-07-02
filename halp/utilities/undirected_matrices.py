@@ -1,6 +1,6 @@
 """
 .. module:: undirected_matrices
-   :synopsis: Provides various methods for tranforming a hypergraph
+   :synopsis: Provides various methods for transforming a hypergraph
             (or its components) into useful corresponding matrix
             representations.
 """

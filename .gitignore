@@ -53,3 +53,7 @@ coverage.xml
 docs/_build/
 
 /main.py
+
+# Test artifacts
+test_directed_read_and_write.txt
+test_undirected_read_and_write.txt

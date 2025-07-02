@@ -16,7 +16,7 @@ class UndirectedHypergraph(object):
 
     An undirected hypergraph contains nodes and undirected hyperedges. Each
     undirected hyperedge simply connects a set of nodes. An undirected
-    hypergraph is a special case of an undirected graph, where each edge
+    graph is a special case of an undirected hypergraph, where each edge
     connects exactly 2 nodes. The set of nodes cannot be empty.
 
     A node is simply any hashable type. See "add_node" or "add_nodes" for
@@ -89,7 +89,7 @@ class UndirectedHypergraph(object):
         #
         self._hyperedge_attributes = {}
 
-        # The star of a node is the set of hyperedges such that the
+        # The star of a node is the set of hyperedges the
         # node is a member of.
         #
         # _star: a dictionary mapping a node to the set of hyperedges

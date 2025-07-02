@@ -1,9 +1,36 @@
 from os import remove
+import pytest
 
 from halp.directed_hypergraph import DirectedHypergraph
+from halp.mixed_hypergraph import MixedHypergraph
 
+@pytest.fixture(params=[DirectedHypergraph, MixedHypergraph])
+def DirectedHypergraphLike(request):
+    return request.param
 
-def test_add_node():
+def add_hyperedge(graph, tail, head, attr_dict=None, **attr):
+    """
+    Adds a hyperedge to an instance produced by DirectedHypergraphLike.
+    """
+    if type(graph) == DirectedHypergraph:
+        return graph.add_hyperedge(tail, head, attr_dict, **attr)
+    elif type(graph) == MixedHypergraph:
+        return graph.add_directed_hyperedge(tail, head, attr_dict, **attr)
+    else:
+        raise ValueError()
+
+def add_hyperedges(graph, hyperedges, attr_dict=None, **attr):
+    """
+    Adds hyperedges to an instance produced by DirectedHypergraphLike.
+    """
+    if type(graph) == DirectedHypergraph:
+        return graph. add_hyperedges(hyperedges, attr_dict, **attr)
+    elif type(graph) == MixedHypergraph:
+        return graph.add_directed_hyperedges(hyperedges, attr_dict, **attr)
+    else:
+        raise ValueError()
+
+def test_add_node(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -12,7 +39,7 @@ def test_add_node():
     attrib_d = {'label': 'black', 'sink': True}
 
     # Test adding unadded nodes with various attribute settings
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_node(node_a)
     H.add_node(node_b, source=True)
     H.add_node(node_c, attrib_c)
@@ -45,7 +72,7 @@ def test_add_node():
         assert False, e
 
 
-def test_add_nodes():
+def test_add_nodes(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -58,7 +85,7 @@ def test_add_nodes():
                  (node_c, attrib_c), (node_d, attrib_d)]
 
     # Test adding unadded nodes with various attribute settings
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_nodes(node_list, common_attrib)
 
     assert node_a in H._node_attributes
@@ -81,7 +108,7 @@ def test_add_nodes():
         assert node in node_set
 
 
-def test_add_hyperedge():
+def test_add_hyperedge(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -94,9 +121,9 @@ def test_add_hyperedge():
 
     attrib = {'weight': 6, 'color': 'black'}
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_node(node_a, label=1337)
-    hyperedge_name = H.add_hyperedge(tail, head, attrib, weight=5)
+    hyperedge_name = add_hyperedge(H, tail, head, attrib, weight=5)
 
     assert hyperedge_name == 'e1'
 
@@ -122,12 +149,12 @@ def test_add_hyperedge():
 
     # Test that adding same hyperedge will only update attributes
     new_attrib = {'weight': 10}
-    H.add_hyperedge(tail, head, new_attrib)
+    add_hyperedge(H, tail, head, new_attrib)
     assert H._hyperedge_attributes[hyperedge_name]['weight'] == 10
     assert H._hyperedge_attributes[hyperedge_name]['color'] == 'black'
 
     try:
-        H.add_hyperedge(set(), set())
+        add_hyperedge(H, set(), set())
         assert False
     except ValueError:
         pass
@@ -135,7 +162,7 @@ def test_add_hyperedge():
         assert False, e
 
 
-def test_get_hyperedge_attributes():
+def test_get_hyperedge_attributes(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -148,9 +175,9 @@ def test_get_hyperedge_attributes():
 
     attrib = {'weight': 6, 'color': 'black'}
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_node(node_a, label=1337)
-    hyperedge_name = H.add_hyperedge(tail, head, attrib, weight=5)
+    hyperedge_name = add_hyperedge(H, tail, head, attrib, weight=5)
 
     assert H.get_hyperedge_attributes(hyperedge_name) == \
         {'tail': tail, 'head': head, 'weight': 5, 'color': 'black'}
@@ -165,7 +192,7 @@ def test_get_hyperedge_attributes():
         assert False, e
 
 
-def test_add_hyperedges():
+def test_add_hyperedges(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -186,9 +213,9 @@ def test_add_hyperedges():
 
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     assert 'e1' in hyperedge_names
     assert 'e2' in hyperedge_names
@@ -210,7 +237,7 @@ def test_add_hyperedges():
         assert hyperedge_id in hyperedge_names
 
 
-def test_remove_node():
+def test_remove_node(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -237,9 +264,9 @@ def test_remove_node():
 
     hyperedges = [(tail1, head1, attrib), (tail2, head2), (tail3, head3)]
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
     H.remove_node(node_a)
 
     # Test that everything that needed to be removed was removed
@@ -276,7 +303,7 @@ def test_remove_node():
         assert False, e
 
 
-def test_remove_nodes():
+def test_remove_nodes(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -311,9 +338,9 @@ def test_remove_nodes():
                   (tail3, head3),
                   (tail4, head4)]
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
     H.remove_nodes([node_a, node_d])
 
     # Test that everything that needed to be removed was removed
@@ -335,7 +362,7 @@ def test_remove_nodes():
     assert frozen_tail3 not in H._predecessors[frozen_head3]
 
 
-def test_remove_hyperedge():
+def test_remove_hyperedge(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -362,9 +389,9 @@ def test_remove_hyperedge():
 
     hyperedges = [(tail1, head1, attrib), (tail2, head2), (tail3, head3)]
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
     H.remove_hyperedge('e1')
 
     assert 'e1' not in H._hyperedge_attributes
@@ -384,7 +411,7 @@ def test_remove_hyperedge():
         assert False, e
 
 
-def test_remove_hyperedges():
+def test_remove_hyperedges(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -411,9 +438,9 @@ def test_remove_hyperedges():
 
     hyperedges = [(tail1, head1, attrib), (tail2, head2), (tail3, head3)]
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
     H.remove_hyperedges(['e1', 'e3'])
 
     assert 'e1' not in H._hyperedge_attributes
@@ -431,7 +458,7 @@ def test_remove_hyperedges():
     assert 'e3' not in H._backward_star[node_e]
 
 
-def test_get_hyperedge_id():
+def test_get_hyperedge_id(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -458,9 +485,9 @@ def test_get_hyperedge_id():
 
     hyperedges = [(tail1, head1, attrib), (tail2, head2), (tail3, head3)]
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     assert H.get_hyperedge_id(tail1, head1) == 'e1'
     assert H.get_hyperedge_id(tail2, head2) == 'e2'
@@ -475,7 +502,7 @@ def test_get_hyperedge_id():
         assert False, e
 
 
-def test_get_hyperedge_attribute():
+def test_get_hyperedge_attribute(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -496,9 +523,9 @@ def test_get_hyperedge_attribute():
 
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     assert H.get_hyperedge_attribute('e1', 'weight') == 6
     assert H.get_hyperedge_attribute('e1', 'color') == 'black'
@@ -523,7 +550,7 @@ def test_get_hyperedge_attribute():
         assert False, e
 
 
-def test_get_hyperedge_tail():
+def test_get_hyperedge_tail(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -544,9 +571,9 @@ def test_get_hyperedge_tail():
 
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     retrieved_tail1 = H.get_hyperedge_tail('e1')
     retrieved_tail2 = H.get_hyperedge_tail('e2')
@@ -554,7 +581,7 @@ def test_get_hyperedge_tail():
     assert retrieved_tail2 == tail2
 
 
-def test_get_hyperedge_head():
+def test_get_hyperedge_head(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -575,9 +602,9 @@ def test_get_hyperedge_head():
 
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     retrieved_head1 = H.get_hyperedge_head('e1')
     retrieved_head2 = H.get_hyperedge_head('e2')
@@ -585,7 +612,7 @@ def test_get_hyperedge_head():
     assert retrieved_head2 == head2
 
 
-def test_get_hyperedge_weight():
+def test_get_hyperedge_weight(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -606,9 +633,9 @@ def test_get_hyperedge_weight():
 
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     weight_e1 = H.get_hyperedge_weight('e1')
     weight_e2 = H.get_hyperedge_weight('e2')
@@ -616,7 +643,7 @@ def test_get_hyperedge_weight():
     assert weight_e2 == 1
 
 
-def test_get_node_attribute():
+def test_get_node_attribute(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -626,7 +653,7 @@ def test_get_node_attribute():
     node_list = [node_a, (node_b, {'source': True}), (node_c, attrib_c)]
 
     # Test adding unadded nodes with various attribute settings
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_nodes(node_list, common_attrib)
 
     assert H.get_node_attribute(node_a, 'common') is True
@@ -654,7 +681,7 @@ def test_get_node_attribute():
         assert False, e
 
 
-def test_get_node_attributes():
+def test_get_node_attributes(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -663,7 +690,7 @@ def test_get_node_attributes():
     attrib_d = {'label': 'black', 'sink': True}
 
     # Test adding unadded nodes with various attribute settings
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_node(node_a)
     H.add_node(node_b, source=True)
     H.add_node(node_c, attrib_c)
@@ -682,7 +709,7 @@ def test_get_node_attributes():
         assert False, e
 
 
-def test_get_forward_star():
+def test_get_forward_star(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -706,8 +733,8 @@ def test_get_forward_star():
 
     hyperedges = [(tail1, head1), (tail2, head2), (tail3, head3)]
 
-    H = DirectedHypergraph()
-    hyperedge_names = H.add_hyperedges(hyperedges)
+    H = DirectedHypergraphLike()
+    hyperedge_names = add_hyperedges(H, hyperedges)
 
     assert H.get_forward_star(node_a) == set(['e1'])
     assert H.get_forward_star(node_b) == set(['e1', 'e2'])
@@ -725,7 +752,7 @@ def test_get_forward_star():
         assert False, e
 
 
-def test_get_backward_star():
+def test_get_backward_star(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -749,8 +776,8 @@ def test_get_backward_star():
 
     hyperedges = [(tail1, head1), (tail2, head2), (tail3, head3)]
 
-    H = DirectedHypergraph()
-    hyperedge_names = H.add_hyperedges(hyperedges)
+    H = DirectedHypergraphLike()
+    hyperedge_names = add_hyperedges(H, hyperedges)
 
     assert H.get_backward_star(node_a) == set(['e2'])
     assert H.get_backward_star(node_b) == set()
@@ -768,7 +795,7 @@ def test_get_backward_star():
         assert False, e
 
 
-def test_get_successors():
+def test_get_successors(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -792,8 +819,8 @@ def test_get_successors():
 
     hyperedges = [(tail1, head1), (tail2, head2), (tail3, head3), (tail3, "F")]
 
-    H = DirectedHypergraph()
-    hyperedge_names = H.add_hyperedges(hyperedges)
+    H = DirectedHypergraphLike()
+    hyperedge_names = add_hyperedges(H, hyperedges)
 
     assert 'e1' in H.get_successors(tail1)
     assert 'e2' in H.get_successors(tail2)
@@ -803,7 +830,7 @@ def test_get_successors():
     assert H.get_successors([node_a]) == set()
 
 
-def test_get_predecessors():
+def test_get_predecessors(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -827,8 +854,8 @@ def test_get_predecessors():
 
     hyperedges = [(tail1, head1), (tail2, head2), (tail3, head3), (tail3, "F")]
 
-    H = DirectedHypergraph()
-    hyperedge_names = H.add_hyperedges(hyperedges)
+    H = DirectedHypergraphLike()
+    hyperedge_names = add_hyperedges(H, hyperedges)
 
     assert 'e1' in H.get_predecessors(head1)
     assert 'e2' in H.get_predecessors(head2)
@@ -838,7 +865,7 @@ def test_get_predecessors():
     assert H.get_predecessors([node_a]) == set()
 
 
-def test_copy():
+def test_copy(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -849,7 +876,7 @@ def test_copy():
 
     node_d = 'D'
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -868,7 +895,7 @@ def test_copy():
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     new_H = H.copy()
 
@@ -882,7 +909,7 @@ def test_copy():
     assert new_H._predecessors == H._predecessors
 
 
-def test_read_and_write():
+def test_read_and_write(DirectedHypergraphLike):
     # Try writing the following hypergraph to a file
     node_a = 'A'
     node_b = 'B'
@@ -894,7 +921,7 @@ def test_read_and_write():
 
     node_d = 'D'
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -913,12 +940,12 @@ def test_read_and_write():
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     H.write("test_directed_read_and_write.txt")
 
     # Try reading the hypergraph that was just written into a new hypergraph
-    new_H = DirectedHypergraph()
+    new_H = DirectedHypergraphLike()
     new_H.read("test_directed_read_and_write.txt")
 
     assert H._node_attributes.keys() == new_H._node_attributes.keys()
@@ -945,7 +972,7 @@ def test_read_and_write():
     remove("test_directed_read_and_write.txt")
 
     # Try reading an invalid hypergraph file
-    invalid_H = DirectedHypergraph()
+    invalid_H = DirectedHypergraphLike()
     try:
         invalid_H.read("tests/data/invalid_directed_hypergraph.txt")
         assert False
@@ -955,7 +982,7 @@ def test_read_and_write():
         assert False, e
 
 
-def test_check_hyperedge_attributes_consistency():
+def test_check_hyperedge_attributes_consistency(DirectedHypergraphLike):
     # make test hypergraph
     node_a = 'A'
     node_b = 'B'
@@ -967,7 +994,7 @@ def test_check_hyperedge_attributes_consistency():
 
     node_d = 'D'
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -986,7 +1013,7 @@ def test_check_hyperedge_attributes_consistency():
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     # This should not fail
     H._check_consistency()
@@ -1070,7 +1097,7 @@ def test_check_hyperedge_attributes_consistency():
         assert False, e
 
 
-def test_check_node_attributes_consistency():
+def test_check_node_attributes_consistency(DirectedHypergraphLike):
     # make test hypergraph
     node_a = 'A'
     node_b = 'B'
@@ -1082,7 +1109,7 @@ def test_check_node_attributes_consistency():
 
     node_d = 'D'
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -1101,7 +1128,7 @@ def test_check_node_attributes_consistency():
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     # This should not fail
     H._check_consistency()
@@ -1152,7 +1179,7 @@ def test_check_node_attributes_consistency():
         assert False, e
 
 
-def test_check_predecessor_successor_consistency():
+def test_check_predecessor_successor_consistency(DirectedHypergraphLike):
     # make test hypergraph
     node_a = 'A'
     node_b = 'B'
@@ -1164,7 +1191,7 @@ def test_check_predecessor_successor_consistency():
 
     node_d = 'D'
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -1183,7 +1210,7 @@ def test_check_predecessor_successor_consistency():
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     # This should not fail
     H._check_consistency()
@@ -1227,7 +1254,7 @@ def test_check_predecessor_successor_consistency():
         assert False, e
 
 
-def test_check_hyperedge_id_consistency():
+def test_check_hyperedge_id_consistency(DirectedHypergraphLike):
     # make test hypergraph
     node_a = 'A'
     node_b = 'B'
@@ -1239,7 +1266,7 @@ def test_check_hyperedge_id_consistency():
 
     node_d = 'D'
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -1258,7 +1285,7 @@ def test_check_hyperedge_id_consistency():
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     # This should not fail
     H._check_consistency()
@@ -1308,7 +1335,7 @@ def test_check_hyperedge_id_consistency():
         assert False, e
 
 
-def test_check_node_consistency():
+def test_check_node_consistency(DirectedHypergraphLike):
     # make test hypergraph
     node_a = 'A'
     node_b = 'B'
@@ -1320,7 +1347,7 @@ def test_check_node_consistency():
 
     node_d = 'D'
 
-    H = DirectedHypergraph()
+    H = DirectedHypergraphLike()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -1339,7 +1366,7 @@ def test_check_node_consistency():
     hyperedges = [(tail1, head1, attrib), (tail2, head2)]
 
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     # This should not fail
     H._check_consistency()
@@ -1368,7 +1395,7 @@ def test_check_node_consistency():
 
     # Check 5.3.1
     new_H = H.copy()
-    new_H.add_hyperedge("X", "Y")
+    add_hyperedge(new_H, H, "X", "Y")
     del new_H._node_attributes["X"]
     del new_H._forward_star["X"]
     del new_H._forward_star["Y"]
@@ -1384,7 +1411,7 @@ def test_check_node_consistency():
 
     # Check 5.3.2
     new_H = H.copy()
-    new_H.add_hyperedge("X", "Y")
+    add_hyperedge(new_H, H, "X", "Y")
     del new_H._node_attributes["Y"]
     del new_H._forward_star["X"]
     del new_H._forward_star["Y"]
@@ -1422,7 +1449,7 @@ def test_check_node_consistency():
         assert False, e
 
 
-def test_get_symmetric_image():
+def test_get_symmetric_image(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -1446,8 +1473,8 @@ def test_get_symmetric_image():
 
     hyperedges = [(tail1, head1), (tail2, head2), (tail3, head3)]
 
-    H = DirectedHypergraph()
-    hyperedge_names = H.add_hyperedges(hyperedges)
+    H = DirectedHypergraphLike()
+    hyperedge_names = add_hyperedges(H, hyperedges)
 
     sym_H = H.get_symmetric_image()
 
@@ -1481,8 +1508,8 @@ def test_get_symmetric_image():
     assert sym_H._backward_star[node_e] == set()
 
 
-def test_get_induced_subhypergraph():
-    H = DirectedHypergraph()
+def test_get_induced_subhypergraph(DirectedHypergraphLike):
+    H = DirectedHypergraphLike()
     H.read("tests/data/basic_directed_hypergraph.txt")
 
     induce_on_nodes = H.get_node_set() - {'t'}
@@ -1501,61 +1528,61 @@ def test_get_induced_subhypergraph():
         assert H.has_hyperedge(tail, head)
 
 
-def test_is_B_hypergraph():
-    H = DirectedHypergraph()
+def test_is_B_hypergraph(DirectedHypergraphLike):
+    H = DirectedHypergraphLike()
     H.read("tests/data/basic_directed_hypergraph.txt")
 
     assert not H.is_B_hypergraph()
 
-    H = DirectedHypergraph()
-    H.add_hyperedge(['a', 'b'], ['c'])
+    H = DirectedHypergraphLike()
+    add_hyperedge(H, ['a', 'b'], ['c'])
     assert H.is_B_hypergraph()
 
-    H = DirectedHypergraph()
-    H.add_hyperedge(['x'], ['y', 'z'])
+    H = DirectedHypergraphLike()
+    add_hyperedge(H, ['x'], ['y', 'z'])
     assert not H.is_B_hypergraph()
 
-    H = DirectedHypergraph()
-    H.add_hyperedge(['a', 'b'], ['c'])
-    H.add_hyperedge(['x'], ['y', 'z'])
+    H = DirectedHypergraphLike()
+    add_hyperedge(H, ['a', 'b'], ['c'])
+    add_hyperedge(H, ['x'], ['y', 'z'])
     assert not H.is_B_hypergraph()
 
 
-def test_is_F_hypergraph():
-    H = DirectedHypergraph()
+def test_is_F_hypergraph(DirectedHypergraphLike):
+    H = DirectedHypergraphLike()
     H.read("tests/data/basic_directed_hypergraph.txt")
 
     assert not H.is_F_hypergraph()
 
-    H = DirectedHypergraph()
-    H.add_hyperedge(['a', 'b'], ['c'])
+    H = DirectedHypergraphLike()
+    add_hyperedge(H, ['a', 'b'], ['c'])
     assert not H.is_F_hypergraph()
 
-    H = DirectedHypergraph()
-    H.add_hyperedge(['x'], ['y', 'z'])
+    H = DirectedHypergraphLike()
+    add_hyperedge(H, ['x'], ['y', 'z'])
     assert H.is_F_hypergraph()
 
-    H = DirectedHypergraph()
-    H.add_hyperedge(['a', 'b'], ['c'])
-    H.add_hyperedge(['x'], ['y', 'z'])
+    H = DirectedHypergraphLike()
+    add_hyperedge(H, ['a', 'b'], ['c'])
+    add_hyperedge(H, ['x'], ['y', 'z'])
     assert not H.is_F_hypergraph()
 
 
-def test_is_BF_hypergraph():
-    H = DirectedHypergraph()
+def test_is_BF_hypergraph(DirectedHypergraphLike):
+    H = DirectedHypergraphLike()
     H.read("tests/data/basic_directed_hypergraph.txt")
 
     assert not H.is_BF_hypergraph()
 
-    H = DirectedHypergraph()
-    H.add_hyperedge(['a', 'b'], ['c'])
+    H = DirectedHypergraphLike()
+    add_hyperedge(H, ['a', 'b'], ['c'])
     assert H.is_BF_hypergraph()
 
-    H = DirectedHypergraph()
-    H.add_hyperedge(['x'], ['y', 'z'])
+    H = DirectedHypergraphLike()
+    add_hyperedge(H, ['x'], ['y', 'z'])
     assert H.is_BF_hypergraph()
 
-    H = DirectedHypergraph()
-    H.add_hyperedge(['a', 'b'], ['c'])
-    H.add_hyperedge(['x'], ['y', 'z'])
+    H = DirectedHypergraphLike()
+    add_hyperedge(H, ['a', 'b'], ['c'])
+    add_hyperedge(H, ['x'], ['y', 'z'])
     assert H.is_BF_hypergraph()

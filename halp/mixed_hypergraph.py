@@ -1,7 +1,7 @@
 """
-.. module:: directed_hypergraph
-   :synopsis: Defines DirectedHypergraph class for the basic properties
-            of a directed hypergraph, along with the relevant structures
+.. module:: mixed_hypergraph
+   :synopsis: Defines MixedHypergraph class for the basic properties
+            of a mixed hypergraph, along with the relevant structures
             regarding nodes, hyperedges, adjacency, etc.
 
 """
@@ -9,39 +9,41 @@
 import copy
 
 
-class DirectedHypergraph(object):
+class MixedHypergraph(object):
     """
-    The DirectedHypergraph class provides a directed hypergraph object
-    and associated functions for basic properties of directed hypergraphs.
+    The MixedHypergraph class provides a mixed hypergraph object
+    and associated functions for basic properties of mixed hypergraphs.
 
-    A directed hypergraph contains nodes and hyperedges. Each hyperedge
-    connects a tail set of nodes to a head set of nodes. The tail and head
-    cannot both be empty.
+    A mixed hypergraph contains nodes and hyperedges. Each hyperedge
+    can either be a 'directed hyperedge' which connects a tail set of
+    nodes to a head set of nodes (where the tail and head cannot both be empty),
+    or an undirected hyperedge, which connects a set of nodes.
 
     A node is simply any hashable type. See "add_node" or "add_nodes" for
     more details.
 
     A directed hyperedge is a tuple of the tail nodes and the head nodes.
+    An undirected hyperedge is any iterable container of nodes.
     This class assigns (upon adding) and refers to each hyperedge by an
     internal ID. See "add_hyperedge" or "add_hyperedges" for more details.
 
-    Self-loops are allowed, but parallel (multi) hyperedges are not.
+    Directed self-loops are allowed, but parallel (multi) hyperedges are not.
 
-    :note: This class uses several data structures to store a directed
+    :note: This class uses several data structures to store a mixed
         hypergraph. Since these structures must stay in sync (see: __init__),
         we highly recommend that only the public methods be used for accessing
         and modifying the hypergraph.
 
     Examples:
-    Create an empty directed hypergraph (no nodes or hyperedges):
+    Create an empty mixed hypergraph (no nodes or hyperedges):
 
-    >>> H = DirectedHypergraph()
+    >>> H = MixedHypergraph()
 
     Add nodes (with or without attributes) to the hypergraph
     one at a time (see: add_node) or several at a time (see: add_nodes):
 
     >>> H.add_nodes(["A", "B", "C", "D"], {color: "black"})
-
+    
     Add hyperedges (with or without attributes) to the hypergraph one
     at a time (see: add_hyperedge) or several at a time (see: add_hyperedges):
 
@@ -88,8 +90,22 @@ class DirectedHypergraph(object):
         #
         self._hyperedge_attributes = {}
 
-        # The forward star of a node is the set of hyperedges such that the
-        # node is in the tail of each hyperedge in that set.
+        # The star of a node is the set of undirected hyperedges the
+        # node is a member of.
+        #
+        # _star: a dictionary mapping a node to the set of undirected
+        # hyperedges that are in that node's star.
+        #
+        # Provides O(1) time access to a reference to the set of hyperedges
+        # that a node is a member of.
+        #
+        # Used in the implementation of methods such as add_node and
+        # remove_hyperedge.
+        #
+        self._star = {}
+
+        # The forward star of a node is the set of directed hyperedges
+        # such that the node is in the tail of each hyperedge in that set.
         #
         # _forward_star: a dictionary mapping a node to the set of hyperedges
         # that are in that node's forward star.
@@ -102,8 +118,8 @@ class DirectedHypergraph(object):
         #
         self._forward_star = {}
 
-        # The backward star of a node is the set of hyperedges such that the
-        # node is in the head of each hyperedge in that set.
+        # The backward star of a node is the set of directed hyperedges such
+        # that the node is in the head of each hyperedge in that set.
         #
         # _backward_star: a dictionary mapping a node to the set of hyperedges
         # that are in that node's backward star.
@@ -117,9 +133,9 @@ class DirectedHypergraph(object):
         self._backward_star = {}
 
         # _successors: a 2-dimensional dictionary mapping (first) a tail set
-        # and (second) a head set of a hyperedge to the ID of the corresponding
-        # hyperedge. We represent each tail set and each head set by a
-        # frozenset, so that the structure is hashable.
+        # and (second) a head set of a directed hyperedge to the ID of the
+        # corresponding hyperedge. We represent each tail set and each head set
+        # by a frozenset, so that the structure is hashable.
         #
         # Provides O(1) time access to the ID of the of the hyperedge
         # connecting a specific tail frozenset to a specific head frozenset.
@@ -131,8 +147,8 @@ class DirectedHypergraph(object):
         self._successors = {}
 
         # _predecessors: a 2-dimensional dictionary mapping (first) a head set
-        # and (second) a tail set of a hyperedge to the ID of the corresponding
-        # hyperedge. We represent each tail set and each head set by a
+        # and (second) a tail set of a directed hyperedge to the ID of the
+        # corresponding hyperedge. We represent each tail set and each head set by a
         # frozenset, so that the structure is hashable.
         #
         # Provides O(1) time access to the ID of the of the hyperedge
@@ -143,6 +159,15 @@ class DirectedHypergraph(object):
         # head frozenset.
         #
         self._predecessors = {}
+
+        # _node_set_to_hyperedge: a dictionary mapping a set of nodes to the ID
+        # of the undirected hyperedge they compose. We represent the node set by a
+        # frozenset, so that the structure is hashable.
+        #
+        # Provides O(1) time access to the ID of the hyperedge that
+        # a specific frozenset of nodes composes.
+        #
+        self._node_set_to_hyperedge = {}
 
         # _current_hyperedge_id: an int representing the hyperedge ID that
         # was most recently assigned by the class (since users don't
@@ -219,7 +244,7 @@ class DirectedHypergraph(object):
         Examples:
         ::
 
-            >>> H = DirectedHypergraph()
+            >>> H = MixedHypergraph()
             >>> attributes = {label: "positive"}
             >>> H.add_node("A", attributes)
             >>> H.add_node("B", label="negative")
@@ -234,6 +259,7 @@ class DirectedHypergraph(object):
             self._node_attributes[node] = attr_dict
             self._forward_star[node] = set()
             self._backward_star[node] = set()
+            self._star[node] = set()
         # Otherwise, just update the node's attributes
         else:
             self._node_attributes[node].update(attr_dict)
@@ -258,7 +284,7 @@ class DirectedHypergraph(object):
         Examples:
         ::
 
-            >>> H = DirectedHypergraph()
+            >>> H = MixedHypergraph()
             >>> attributes = {label: "positive"}
             >>> node_list = ["A",
                              ("B", {label="negative"}),
@@ -292,7 +318,7 @@ class DirectedHypergraph(object):
         Examples:
         ::
 
-            >>> H = DirectedHypergraph()
+            >>> H = MixedHypergraph()
             >>> H.add_node("A", label="positive")
             >>> H.remove_node("A")
 
@@ -300,21 +326,32 @@ class DirectedHypergraph(object):
         if not self.has_node(node):
             raise ValueError("No such node exists.")
 
-        # Remove every hyperedge which is in the forward star of the node
+        # Loop over every undirected hyperedge in the star of the node;
+        # i.e., over every undirected hyperedge that contains the node
+        for hyperedge_id in self._star[node]:
+            frozen_nodes = \
+                self._hyperedge_attributes[hyperedge_id]["__frozen_nodes"]
+            # Remove the node set composing the hyperedge
+            del self._node_set_to_hyperedge[frozen_nodes]
+            # Remove this hyperedge's attributes
+            del self._hyperedge_attributes[hyperedge_id]
+
+        # Remove every directed hyperedge which is in the forward star of the node
         forward_star = self.get_forward_star(node)
         for hyperedge_id in forward_star:
             self.remove_hyperedge(hyperedge_id)
 
-        # Remove every hyperedge which is in the backward star of the node
+        # Remove every directed  hyperedge which is in the backward star of the node
         # but that is not also in the forward start of the node (to handle
         # overlapping hyperedges)
         backward_star = self.get_backward_star(node)
         for hyperedge_id in backward_star - forward_star:
             self.remove_hyperedge(hyperedge_id)
 
-        # Remove node's forward and backward star
+        # Remove all of the node's stars
         del self._forward_star[node]
         del self._backward_star[node]
+        del self._star[node]
 
         # Remove node's attributes dictionary
         del self._node_attributes[node]
@@ -336,7 +373,7 @@ class DirectedHypergraph(object):
         Examples:
         ::
 
-            >>> H = DirectedHypergraph()
+            >>> H = MixedHypergraph()
             >>> attributes = {label: "positive"}
             >>> node_list = ["A",
                              ("B", {label="negative"}),
@@ -348,6 +385,7 @@ class DirectedHypergraph(object):
         for node in nodes:
             self.remove_node(node)
 
+    # WIP convert
     def trim_node(self, node):
         """Removes a node from the hypergraph. Modifies hypredges with the 
         trimmed node in their head or tail so that they no longer include 
@@ -359,7 +397,7 @@ class DirectedHypergraph(object):
         Examples:
         ::
         
-            >>> H = DirectedHypergraph()
+            >>> H = MixedHypergraph()
             >>> node_list = ['A', 'B', 'C', 'D']
             >>> H.add_nodes(node_list)
             >>> H.add_hyperedge(['A','B'],['C','D'])
@@ -467,9 +505,76 @@ class DirectedHypergraph(object):
         self._current_hyperedge_id += 1
         return "e" + str(self._current_hyperedge_id)
 
-    def add_hyperedge(self, tail, head, attr_dict=None, **attr):
-        """Adds a hyperedge to the hypergraph, along with any related
-        attributes of the hyperedge.
+    # ------------------------------------------ WIP
+
+    def add_undirected_hyperedge(self, nodes, attr_dict=None, **attr):
+        """Adds an undirected hyperedge to the hypergraph, along with any
+            related attributes of the hyperedge.
+            This method will automatically add any node from the node set
+            that was not in the hypergraph.
+            A hyperedge without a "weight" attribute specified will be
+            assigned the default value of 1.
+
+        :param nodes: iterable container of references to nodes in the
+                    hyperedge to be added.
+        :param attr_dict: dictionary of attributes of the hyperedge being
+                        added.
+        :param attr: keyword arguments of attributes of the hyperedge;
+                    attr's values will override attr_dict's values
+                    if both are provided.
+        :returns: str -- the ID of the hyperedge that was added.
+        :raises: ValueError -- nodes arguments cannot be empty.
+
+        Examples:
+        ::
+
+            >>> H = MixedHypergraph()
+            >>> x = H.add_undirected_hyperedge(["A", "B", "C"])
+            >>> y = H.add_undirected_hyperedge(("A", "D"), weight=2)
+            >>> z = H.add_undirected_hyperedge(set(["B", "D"]), {color: "red"})
+
+        """
+        attr_dict = self._combine_attribute_arguments(attr_dict, attr)
+
+        # Don't allow empty node set (invalid hyperedge)
+        if not nodes:
+            raise ValueError("nodes argument cannot be empty.")
+
+        # Use frozensets for node sets to allow for hashable keys
+        frozen_nodes = frozenset(nodes)
+
+        is_new_hyperedge = not self.has_undirected_hyperedge(frozen_nodes)
+        if is_new_hyperedge:
+            # Add nodes to graph (if not already present)
+            self.add_nodes(frozen_nodes)
+
+            # Create new hyperedge name to use as reference for that hyperedge
+            hyperedge_id = self._assign_next_hyperedge_id()
+
+            # For each node in the node set, add hyperedge to the node's star
+            for node in frozen_nodes:
+                self._star[node].add(hyperedge_id)
+
+            # Add the hyperedge ID as the hyperedge that the node set composes
+            self._node_set_to_hyperedge[frozen_nodes] = hyperedge_id
+
+            # Assign some special attributes to this hyperedge. We assign
+            # a default weight of 1 to the hyperedge. We also store the
+            # original node set in order to return them exactly as the
+            # user passed them into add_hyperedge.
+            self._hyperedge_attributes[hyperedge_id] = \
+                {"nodes": nodes, "__frozen_nodes": frozen_nodes, "weight": 1}
+        else:
+            # If its not a new hyperedge, just get its ID to update attributes
+            hyperedge_id = self._node_set_to_hyperedge[frozen_nodes]
+
+        # Set attributes and return hyperedge ID
+        self._hyperedge_attributes[hyperedge_id].update(attr_dict)
+        return hyperedge_id
+
+    def add_directed_hyperedge(self, tail, head, attr_dict=None, **attr):
+        """Adds a directed hyperedge to the hypergraph, along with any
+        related attributes of the hyperedge.
         This method will automatically add any node from the tail and
         head that was not in the hypergraph.
         A hyperedge without a "weight" attribute specified will be
@@ -490,12 +595,12 @@ class DirectedHypergraph(object):
         Examples:
         ::
 
-            >>> H = DirectedHypergraph()
-            >>> x = H.add_hyperedge(["A", "B"], ["C", "D"])
-            >>> y = H.add_hyperedge(("A", "C"), ("B"), 'weight'=2)
-            >>> z = H.add_hyperedge(set(["D"]),
-                                    set(["A", "C"]),
-                                    {color: "red"})
+            >>> H = MixedHypergraph()
+            >>> x = H.add_directed_hyperedge(["A", "B"], ["C", "D"])
+            >>> y = H.add_directed_hyperedge(("A", "C"), ("B"), 'weight'=2)
+            >>> z = H.add_directed_hyperedge(set(["D"]),
+                                             set(["A", "C"]),
+                                             {color: "red"})
 
         """
         attr_dict = self._combine_attribute_arguments(attr_dict, attr)
@@ -515,7 +620,7 @@ class DirectedHypergraph(object):
         if frozen_head not in self._predecessors:
             self._predecessors[frozen_head] = {}
 
-        is_new_hyperedge = not self.has_hyperedge(frozen_tail, frozen_head)
+        is_new_hyperedge = not self.has_directed_hyperedge(frozen_tail, frozen_head)
         if is_new_hyperedge:
             # Add tail and head nodes to graph (if not already present)
             self.add_nodes(frozen_head)
@@ -552,9 +657,49 @@ class DirectedHypergraph(object):
         self._hyperedge_attributes[hyperedge_id].update(attr_dict)
         return hyperedge_id
 
-    def add_hyperedges(self, hyperedges, attr_dict=None, **attr):
-        """Adds multiple hyperedges to the graph, along with any related
-            attributes of the hyperedges.
+    def add_undirected_hyperedges(self, hyperedges, attr_dict=None, **attr):
+        """Adds multiple undirected hyperedges to the graph, along with any
+            related attributes of the hyperedges.
+            If any node of a hyperedge has not previously been added to the
+            hypergraph, it will automatically be added here.
+            Hyperedges without a "weight" attribute specified will be
+            assigned the default value of 1.
+
+        :param hyperedges: iterable container to references of the node sets
+        :param attr_dict: dictionary of attributes shared by all
+                    the hyperedges being added.
+        :param attr: keyword arguments of attributes of the hyperedges;
+                    attr's values will override attr_dict's values
+                    if both are provided.
+        :returns: list -- the IDs of the hyperedges added in the order
+                    specified by the hyperedges container's iterator.
+
+        See also:
+        add_hyperedge
+
+        Examples:
+        ::
+
+            >>> H = MixedHypergraph()
+            >>> hyperedge_list = (["A", "B", "C"],
+                                  ("A", "D"),
+                                  set(["B", "D"]))
+            >>> hyperedge_ids = H.add_hyperedges(hyperedge_list)
+
+        """
+        attr_dict = self._combine_attribute_arguments(attr_dict, attr)
+
+        hyperedge_ids = []
+
+        for nodes in hyperedges:
+            hyperedge_id = self.add_undirected_hyperedge(nodes, attr_dict.copy())
+            hyperedge_ids.append(hyperedge_id)
+
+        return hyperedge_ids
+
+    def add_directed_hyperedges(self, hyperedges, attr_dict=None, **attr):
+        """Adds multiple directed hyperedges to the graph, along with any
+            related attributes of the hyperedges.
             If any node in the tail or head of any hyperedge has not
             previously been added to the hypergraph, it will automatically
             be added here. Hyperedges without a "weight" attribute specified
@@ -580,11 +725,11 @@ class DirectedHypergraph(object):
         Examples:
         ::
 
-            >>> H = DirectedHypergraph()
+            >>> H = MixedHypergraph()
             >>> xyz = hyperedge_list = ((["A", "B"], ["C", "D"]),
                                         (("A", "C"), ("B"), {'weight': 2}),
                                         (set(["D"]), set(["A", "C"])))
-            >>> H.add_hyperedges(hyperedge_list)
+            >>> H.add_directed_hyperedges(hyperedge_list)
 
         """
         attr_dict = self._combine_attribute_arguments(attr_dict, attr)
@@ -600,12 +745,12 @@ class DirectedHypergraph(object):
                 # attr_dict, with the former (node_attr_dict) taking precedence
                 new_dict = attr_dict.copy()
                 new_dict.update(hyperedge_attr_dict)
-                hyperedge_id = self.add_hyperedge(tail, head, new_dict)
+                hyperedge_id = self.add_directed_hyperedge(tail, head, new_dict)
             else:
                 # See (["A", "B"], ["C", "D"]) in the documentation example
                 tail, head = hyperedge
                 hyperedge_id = \
-                    self.add_hyperedge(tail, head, attr_dict.copy())
+                    self.add_directed_hyperedge(tail, head, attr_dict.copy())
             hyperedge_ids.append(hyperedge_id)
 
         return hyperedge_ids
@@ -619,41 +764,54 @@ class DirectedHypergraph(object):
         Examples:
         ::
 
-            >>> H = DirectedHypergraph()
+            >>> H = MixedHypergraph()
             >>> xyz = hyperedge_list = ((["A"], ["B", "C"]),
                                         (("A", "B"), ("C"), {'weight': 2}),
                                         (set(["B"]), set(["A", "C"])))
-            >>> H.add_hyperedges(hyperedge_list)
+            >>> H.add_directed_hyperedges(hyperedge_list)
             >>> H.remove_hyperedge(xyz[0])
+            >>> x = H.add_undirected_hyperedge(["A", "B", "C"])
+            >>> H.remove_hyperedge(x)
 
         """
         if not self.has_hyperedge_id(hyperedge_id):
             raise ValueError("No such hyperedge exists.")
 
-        frozen_tail = \
-            self._hyperedge_attributes[hyperedge_id]["__frozen_tail"]
-        frozen_head = \
-            self._hyperedge_attributes[hyperedge_id]["__frozen_head"]
+        hyperedge_attribute = self._hyperedge_attributes[hyperedge_id]
 
-        # Remove this hyperedge from the forward-star of every tail node
-        for node in frozen_tail:
-            self._forward_star[node].remove(hyperedge_id)
-        # Remove this hyperedge from the backward-star of every head node
-        for node in frozen_head:
-            self._backward_star[node].remove(hyperedge_id)
+        if "__frozen_nodes" in hyperedge_attribute:
+            frozen_nodes = hyperedge_attribute["__frozen_nodes"]
+            # We have an undirected hyperedge
+            # Remove this hyperedge from the star of every node in the hyperedge
+            for node in frozen_nodes:
+                self._star[node].remove(hyperedge_id)
 
-        # Remove frozen_head as a successor of frozen_tail
-        del self._successors[frozen_tail][frozen_head]
-        # If that tail is no longer the tail of any hyperedge, remove it
-        # from the successors dictionary
-        if self._successors[frozen_tail] == {}:
-            del self._successors[frozen_tail]
-        # Remove frozen_tail as a predecessor of frozen_head
-        del self._predecessors[frozen_head][frozen_tail]
-        # If that head is no longer the head of any hyperedge, remove it
-        # from the predecessors dictionary
-        if self._predecessors[frozen_head] == {}:
-            del self._predecessors[frozen_head]
+            # Remove this set as the composer of the hyperedge
+            del self._node_set_to_hyperedge[frozen_nodes]
+        else:
+            # We have a directed hyperedge
+            frozen_tail = hyperedge_attribute["__frozen_tail"]
+            frozen_head = hyperedge_attribute["__frozen_head"]
+
+            # Remove this hyperedge from the forward-star of every tail node
+            for node in frozen_tail:
+                self._forward_star[node].remove(hyperedge_id)
+            # Remove this hyperedge from the backward-star of every head node
+            for node in frozen_head:
+                self._backward_star[node].remove(hyperedge_id)
+
+            # Remove frozen_head as a successor of frozen_tail
+            del self._successors[frozen_tail][frozen_head]
+            # If that tail is no longer the tail of any hyperedge, remove it
+            # from the successors dictionary
+            if self._successors[frozen_tail] == {}:
+                del self._successors[frozen_tail]
+            # Remove frozen_tail as a predecessor of frozen_head
+            del self._predecessors[frozen_head][frozen_tail]
+            # If that head is no longer the head of any hyperedge, remove it
+            # from the predecessors dictionary
+            if self._predecessors[frozen_head] == {}:
+                del self._predecessors[frozen_head]
 
         # Remove hyperedge's attributes dictionary
         del self._hyperedge_attributes[hyperedge_id]
@@ -683,7 +841,20 @@ class DirectedHypergraph(object):
         for hyperedge_id in hyperedge_ids:
             self.remove_hyperedge(hyperedge_id)
 
-    def has_hyperedge(self, tail, head):
+    def has_undirected_hyperedge(self, nodes):
+        # Note: Code and comments unchanged from DirectedHypergraph
+        """Given a set of nodes, returns whether there is a hyperedge in the
+        hypergraph that is precisely composed of those nodes.
+
+        :param nodes: iterable container of references to nodes in the
+                    hyperedge being checked.
+        :returns: bool -- true iff a hyperedge exists composed of the
+                specified nodes.
+        """
+        frozen_nodes = frozenset(nodes)
+        return frozen_nodes in self._node_set_to_hyperedge
+
+    def has_directed_hyperedge(self, tail, head):
         """Given a tail and head set of nodes, returns whether there
         is a hyperedge in the hypergraph that connects the tail set
         to the head set.
@@ -726,7 +897,7 @@ class DirectedHypergraph(object):
         """
         return iter(self._hyperedge_attributes)
 
-    def get_hyperedge_id(self, tail, head):
+    def get_directed_hyperedge_id(self, tail, head):
         """From a tail and head set of nodes, returns the ID of the hyperedge
         that these sets comprise.
 
@@ -752,7 +923,7 @@ class DirectedHypergraph(object):
         frozen_tail = frozenset(tail)
         frozen_head = frozenset(head)
 
-        if not self.has_hyperedge(frozen_tail, frozen_head):
+        if not self.has_directed_hyperedge(frozen_tail, frozen_head):
             raise ValueError("No such hyperedge exists.")
 
         return self._successors[frozen_tail][frozen_head]
@@ -802,7 +973,7 @@ class DirectedHypergraph(object):
         dict_to_copy = self._hyperedge_attributes[hyperedge_id].items()
         attributes = {}
         for attr_name, attr_value in dict_to_copy:
-            if attr_name not in ("__frozen_tail", "__frozen_head"):
+            if attr_name not in ("__frozen_nodes", "__frozen_tail", "__frozen_head"):
                 attributes[attr_name] = copy.copy(attr_value)
         return attributes
 
@@ -826,6 +997,16 @@ class DirectedHypergraph(object):
         """
         return self.get_hyperedge_attribute(hyperedge_id, "head")
 
+    def get_hyperedge_nodes(self, hyperedge_id):
+        """Given a hyperedge ID, get a copy of that hyperedge's nodes.
+
+        :param hyperedge_id: ID of the hyperedge to retrieve the nodes from.
+        :returns: a copy of the container of nodes that the user provided
+                for the hyperedge referenced as hyperedge_id.
+
+        """
+        return self.get_hyperedge_attribute(hyperedge_id, "nodes")
+
     def get_hyperedge_weight(self, hyperedge_id):
         """Given a hyperedge ID, get that hyperedge's weight.
 
@@ -836,7 +1017,8 @@ class DirectedHypergraph(object):
         return self.get_hyperedge_attribute(hyperedge_id, "weight")
 
     def get_forward_star(self, node):
-        """Given a node, get a copy of that node's forward star.
+        """Given a node, get a copy of that node's forward star related
+        to directed hyperedges.
 
         :param node: node to retrieve the forward-star of.
         :returns: set -- set of hyperedge_ids for the hyperedges
@@ -849,7 +1031,8 @@ class DirectedHypergraph(object):
         return self._forward_star[node].copy()
 
     def get_backward_star(self, node):
-        """Given a node, get a copy of that node's backward star.
+        """Given a node, get a copy of that node's backward star related
+        to directed hyperedges.
 
         :param node: node to retrieve the backward-star of.
         :returns: set -- set of hyperedge_ids for the hyperedges
@@ -860,6 +1043,20 @@ class DirectedHypergraph(object):
         if node not in self._node_attributes:
             raise ValueError("No such node exists.")
         return self._backward_star[node].copy()
+
+    def get_star(self, node):
+        """Given a node, get a copy of that node's star, that is, the set of
+        undirected hyperedges that the node belongs to.
+
+        :param node: node to retrieve the star of.
+        :returns: set -- set of hyperedge_ids for the undirected hyperedges
+                        in the node's star.
+        :raises: ValueError -- No such node exists.
+
+        """
+        if node not in self._node_attributes:
+            raise ValueError("No such node exists.")
+        return self._star[node].copy()
 
     def get_successors(self, tail):
         """Given a tail set of nodes, get a list of edges of which the node
@@ -967,7 +1164,7 @@ class DirectedHypergraph(object):
                 the current hypergraph
 
         """
-        new_H = DirectedHypergraph()
+        new_H = MixedHypergraph()
 
         # Loop over every node and its corresponding attribute dict
         # in the original hypergraph's _node_attributes dict
@@ -994,14 +1191,21 @@ class DirectedHypergraph(object):
                     _hyperedge_attributes[hyperedge_id][attr_name] = \
                     copy.copy(attr_value)
 
-        # Copy the original hypergraph's forward star and backward star
+        # Copy all of the original hypergraph's stars 
         new_H._backward_star = self._backward_star.copy()
         for node in self._node_attributes.keys():
             new_H._backward_star[node] = \
                 self._backward_star[node].copy()
             new_H._forward_star[node] = \
                 self._forward_star[node].copy()
+        new_H._star = self._star.copy()
+        for node in self._node_attributes.keys():
+            new_H._star[node] = self._star[node].copy()
 
+        # Copy the original hypergraph's composed hyperedges
+        for frozen_nodes, hyperedge_id in self._node_set_to_hyperedge.items():
+            new_H._node_set_to_hyperedge[frozen_nodes] = \
+                copy.copy(hyperedge_id)
         # Copy the original hypergraph's successors
         for frozen_tail, successor_dict in self._successors.items():
             new_H._successors[frozen_tail] = successor_dict.copy()
@@ -1015,13 +1219,14 @@ class DirectedHypergraph(object):
         return new_H
 
     def get_symmetric_image(self):
-        """Creates a new DirectedHypergraph object that is the symmetric
+        """Creates a new MixedHypergraph object that is the symmetric
         image of this hypergraph (i.e., identical hypergraph with all
         edge directions reversed).
         Copies of each of the nodes' and hyperedges' attributes are stored
         and used in the new hypergraph.
+        This does not affect undirected hyperedges.
 
-        :returns: DirectedHypergraph -- a new hypergraph that is the symmetric
+        :returns: MixedHypergraph -- a new hypergraph that is the symmetric
                 image of the current hypergraph.
 
         """
@@ -1032,6 +1237,7 @@ class DirectedHypergraph(object):
         # Reverse the tail and head (and __frozen_tail and __frozen_head) for
         # every hyperedge
         for hyperedge_id in self.get_hyperedge_id_set():
+            # WIP check if hyperedges are undirected beforehand
             attr_dict = new_H._hyperedge_attributes[hyperedge_id]
             attr_dict["tail"], attr_dict["head"] = \
                 attr_dict["head"], attr_dict["tail"]

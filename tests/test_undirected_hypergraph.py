@@ -1,9 +1,36 @@
 from os import remove
+import pytest
 
 from halp.undirected_hypergraph import UndirectedHypergraph
+from halp.mixed_hypergraph import MixedHypergraph
 
+@pytest.fixture(params=[UndirectedHypergraph, MixedHypergraph])
+def UndirectedHypergraphLike(request):
+    return request.param
 
-def test_add_node():
+def add_hyperedge(graph, nodes, attr_dict=None, **attr):
+    """
+    Adds a hyperedge to an instance produced by UndirectedHypergraphLike.
+    """
+    if type(graph) == UndirectedHypergraph:
+        return graph.add_hyperedge(nodes, attr_dict, **attr)
+    elif type(graph) == MixedHypergraph:
+        return graph.add_directed_hyperedge(nodes, attr_dict, **attr)
+    else:
+        raise ValueError()
+
+def add_hyperedges(graph, hyperedges, attr_dict=None, **attr):
+    """
+    Adds hyperedges to an instance produced by UndirectedHypergraphLike.
+    """
+    if type(graph) == UndirectedHypergraph:
+        return graph.add_hyperedges(hyperedges, attr_dict, **attr)
+    elif type(graph) == MixedHypergraph:
+        return graph.add_undirected_hyperedges(hyperedges, attr_dict, **attr)
+    else:
+        raise ValueError()
+
+def test_add_node(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -12,7 +39,7 @@ def test_add_node():
     attrib_d = {'label': 'black', 'sink': True}
 
     # Test adding unadded nodes with various attribute settings
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     H.add_node(node_a)
     H.add_node(node_b, source=True)
     H.add_node(node_c, attrib_c)
@@ -45,7 +72,7 @@ def test_add_node():
         assert False, e
 
 
-def test_add_nodes():
+def test_add_nodes(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -58,7 +85,7 @@ def test_add_nodes():
                  (node_c, attrib_c), (node_d, attrib_d)]
 
     # Test adding unadded nodes with various attribute settings
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     H.add_nodes(node_list, common_attrib)
 
     assert node_a in H._node_attributes
@@ -81,7 +108,7 @@ def test_add_nodes():
         assert node in node_set
 
 
-def test_add_hyperedge():
+def test_add_hyperedge(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -92,9 +119,9 @@ def test_add_hyperedge():
 
     attrib = {'weight': 6, 'color': 'black'}
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     H.add_node(node_a, label=1337)
-    hyperedge_name = H.add_hyperedge(nodes1, attrib, weight=5)
+    hyperedge_name = add_hyperedge(H, nodes1, attrib, weight=5)
 
     assert hyperedge_name == 'e1'
 
@@ -115,12 +142,12 @@ def test_add_hyperedge():
 
     # Test that adding same hyperedge will only update attributes
     new_attrib = {'weight': 10}
-    H.add_hyperedge(nodes1, new_attrib)
+    add_hyperedge(H, nodes1, new_attrib)
     assert H._hyperedge_attributes[hyperedge_name]['weight'] == 10
     assert H._hyperedge_attributes[hyperedge_name]['color'] == 'black'
 
     try:
-        H.add_hyperedge(set())
+        add_hyperedge(H, set())
         assert False
     except ValueError:
         pass
@@ -128,7 +155,7 @@ def test_add_hyperedge():
         assert False, e
 
 
-def test_add_hyperedges():
+def test_add_hyperedges(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -144,9 +171,9 @@ def test_add_hyperedges():
 
     hyperedges = [nodes1, nodes2]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     assert 'e1' in hyperedge_names
     assert 'e2' in hyperedge_names
@@ -167,7 +194,7 @@ def test_add_hyperedges():
         assert hyperedge_id in hyperedge_names
 
 
-def test_remove_hyperedge():
+def test_remove_hyperedge(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -187,9 +214,9 @@ def test_remove_hyperedge():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
     H.remove_hyperedge('e1')
 
     assert 'e1' not in H._hyperedge_attributes
@@ -207,7 +234,7 @@ def test_remove_hyperedge():
         assert False, e
 
 
-def test_remove_hyperedges():
+def test_remove_hyperedges(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -227,9 +254,9 @@ def test_remove_hyperedges():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
     H.remove_hyperedges(['e1', 'e3'])
 
     assert 'e1' not in H._hyperedge_attributes
@@ -244,7 +271,7 @@ def test_remove_hyperedges():
     assert frozen_nodes3 not in H._node_set_to_hyperedge
 
 
-def test_remove_node():
+def test_remove_node(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -264,9 +291,9 @@ def test_remove_node():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
     H.remove_node(node_a)
 
     # Test that everything that needed to be removed was removed
@@ -290,7 +317,7 @@ def test_remove_node():
         assert False, e
 
 
-def test_remove_nodes():
+def test_remove_nodes(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -310,9 +337,9 @@ def test_remove_nodes():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
     H.remove_nodes([node_a, node_e])
 
     # Test that everything that needed to be removed was removed
@@ -329,7 +356,7 @@ def test_remove_nodes():
     assert frozen_nodes3 not in H._node_set_to_hyperedge
 
 
-def test_get_hyperedge_id():
+def test_get_hyperedge_id(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -349,9 +376,9 @@ def test_get_hyperedge_id():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     assert H.get_hyperedge_id(nodes1) == 'e1'
     assert H.get_hyperedge_id(nodes2) == 'e2'
@@ -366,7 +393,7 @@ def test_get_hyperedge_id():
         assert False, e
 
 
-def test_get_hyperedge_attribute():
+def test_get_hyperedge_attribute(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -386,9 +413,9 @@ def test_get_hyperedge_attribute():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     assert H.get_hyperedge_attribute('e1', 'weight') == 1
     assert H.get_hyperedge_attribute('e1', 'color') == 'white'
@@ -413,7 +440,7 @@ def test_get_hyperedge_attribute():
         assert False, e
 
 
-def test_get_hyperedge_attributes():
+def test_get_hyperedge_attributes(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -433,9 +460,9 @@ def test_get_hyperedge_attributes():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     attrs = H.get_hyperedge_attributes('e1')
     assert attrs['weight'] == 1
@@ -452,7 +479,7 @@ def test_get_hyperedge_attributes():
         assert False, e
 
 
-def test_get_hyperedge_nodes():
+def test_get_hyperedge_nodes(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -472,9 +499,9 @@ def test_get_hyperedge_nodes():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     retrieved_nodes1 = H.get_hyperedge_nodes('e1')
     retrieved_nodes2 = H.get_hyperedge_nodes('e2')
@@ -482,7 +509,7 @@ def test_get_hyperedge_nodes():
     assert retrieved_nodes2 == nodes2
 
 
-def test_get_hyperedge_weight():
+def test_get_hyperedge_weight(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -502,9 +529,9 @@ def test_get_hyperedge_weight():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     weight_e1 = H.get_hyperedge_weight('e1')
     weight_e2 = H.get_hyperedge_weight('e2')
@@ -512,7 +539,7 @@ def test_get_hyperedge_weight():
     assert weight_e2 == 2
 
 
-def test_get_node_attribute():
+def test_get_node_attribute(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -521,7 +548,7 @@ def test_get_node_attribute():
     attrib_d = {'label': 'black', 'sink': True}
 
     # Test adding unadded nodes with various attribute settings
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     H.add_node(node_a)
     H.add_node(node_b, source=True)
     H.add_node(node_c, attrib_c)
@@ -550,7 +577,7 @@ def test_get_node_attribute():
         assert False, e
 
 
-def test_get_node_attributes():
+def test_get_node_attributes(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -559,7 +586,7 @@ def test_get_node_attributes():
     attrib_d = {'label': 'black', 'sink': True}
 
     # Test adding unadded nodes with various attribute settings
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     H.add_node(node_a)
     H.add_node(node_b, source=True)
     H.add_node(node_c, attrib_c)
@@ -578,7 +605,7 @@ def test_get_node_attributes():
         assert False, e
 
 
-def test_get_star():
+def test_get_star(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -598,9 +625,9 @@ def test_get_star():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     assert H.get_star(node_a) == set(['e1', 'e2'])
     assert H.get_star(node_b) == set(['e1'])
@@ -618,7 +645,7 @@ def test_get_star():
         assert False, e
 
 
-def test_copy():
+def test_copy(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
     node_c = 'C'
@@ -638,10 +665,10 @@ def test_copy():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     H.add_node("A", root=True)
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     new_H = H.copy()
 
@@ -651,7 +678,7 @@ def test_copy():
     assert new_H._node_set_to_hyperedge == H._node_set_to_hyperedge
 
 
-def test_read_and_write():
+def test_read_and_write(UndirectedHypergraphLike):
     # Try writing the following hypergraph to a file
     node_a = 'A'
     node_b = 'B'
@@ -672,14 +699,14 @@ def test_read_and_write():
 
     hyperedges = hyperedges = [nodes1, nodes2, nodes3]
 
-    H = UndirectedHypergraph()
+    H = UndirectedHypergraphLike()
     hyperedge_names = \
-        H.add_hyperedges(hyperedges, common_attrib, color='white')
+        add_hyperedges(H, hyperedges, common_attrib, color='white')
 
     H.write("test_undirected_read_and_write.txt")
 
     # Try reading the hypergraph that was just written into a new hypergraph
-    new_H = UndirectedHypergraph()
+    new_H = UndirectedHypergraphLike()
     new_H.read("test_undirected_read_and_write.txt")
 
     assert H._node_attributes.keys() == new_H._node_attributes.keys()
@@ -703,7 +730,7 @@ def test_read_and_write():
     remove("test_undirected_read_and_write.txt")
 
     # Try reading an invalid hypergraph file
-    invalid_H = UndirectedHypergraph()
+    invalid_H = UndirectedHypergraphLike()
     try:
         invalid_H.read("tests/data/invalid_undirected_hypergraph.txt")
         assert False
