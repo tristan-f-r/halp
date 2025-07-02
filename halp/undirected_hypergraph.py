@@ -335,18 +335,18 @@ class UndirectedHypergraph(object):
             >>> H.trim_node('A')
         """
     
-        s = self.get_star(node)
-        remove_set = set()
-    
         def get_attrs(H, hyperedge):
-            #copies the attribute dictionary of a hyperedge except for the head and tail
+            #copies the attribute dictionary of a hyperedge except for the nodes
             new_attrs = {}
             old_attrs = H.get_hyperedge_attributes(hyperedge)
         
             for key in old_attrs:
-                if key not in {'head', 'tail'}:
+                if key != 'nodes':
                     new_attrs[key] = old_attrs[key]
             return new_attrs
+        
+        remove_set = set()
+        s = self.get_star(node)
     
         for hedge in s:
             nodes = set(self.get_hyperedge_nodes(hedge))

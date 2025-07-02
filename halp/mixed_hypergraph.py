@@ -404,19 +404,31 @@ class MixedHypergraph(object):
             >>> H.trim_node('A')
         """
     
-        fs = self.get_forward_star(node)
-        bs = self.get_backward_star(node)
-        remove_set = set()
-    
         def get_attrs(H, hyperedge):
-            #copies the attribute dictionary of a hyperedge except for the head and tail
+            #copies the attribute dictionary of a hyperedge except for the head, tail, and nodes
             new_attrs = {}
             old_attrs = H.get_hyperedge_attributes(hyperedge)
         
             for key in old_attrs:
-                if key not in {'head', 'tail'}:
+                if key not in {'head', 'tail', 'nodes'}:
                     new_attrs[key] = old_attrs[key]
             return new_attrs
+
+        remove_set = set()
+        # Handle undirected hyperedges
+        s = self.get_star(node)
+    
+        for hedge in s:
+            nodes = set(self.get_hyperedge_nodes(hedge))
+            if len(nodes) > 1:
+                new_nodes = nodes - {node}
+                attrs = get_attrs(self, hedge)
+                self.add_undirected_hyperedge(new_nodes, attrs)
+            remove_set.add(hedge)
+        
+        # Handle directed hyperedges
+        fs = self.get_forward_star(node)
+        bs = self.get_backward_star(node)
     
         for hedge in fs:
             tail = set(self.get_hyperedge_tail(hedge))
@@ -424,7 +436,7 @@ class MixedHypergraph(object):
             if len(tail) > 1:
                 new_tail = tail - {node}
                 attrs = get_attrs(self, hedge)
-                self.add_hyperedge(new_tail, head, attrs)
+                self.add_directed_hyperedge(new_tail, head, attrs)
             remove_set.add(hedge)
             
         for hedge in bs:
@@ -433,7 +445,7 @@ class MixedHypergraph(object):
             if len(head) > 1:
                 new_head = head - {node}
                 attrs = get_attrs(self, hedge)
-                self.add_hyperedge(tail, new_head, attrs)
+                self.add_directed_hyperedge(tail, new_head, attrs)
             remove_set.add(hedge)
 
         for hedge in remove_set:

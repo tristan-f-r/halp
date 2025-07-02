@@ -366,10 +366,6 @@ class DirectedHypergraph(object):
             >>> H.trim_node('A')
         """
     
-        fs = self.get_forward_star(node)
-        bs = self.get_backward_star(node)
-        remove_set = set()
-    
         def get_attrs(H, hyperedge):
             #copies the attribute dictionary of a hyperedge except for the head and tail
             new_attrs = {}
@@ -379,6 +375,10 @@ class DirectedHypergraph(object):
                 if key not in {'head', 'tail'}:
                     new_attrs[key] = old_attrs[key]
             return new_attrs
+        
+        remove_set = set()
+        fs = self.get_forward_star(node)
+        bs = self.get_backward_star(node)
     
         for hedge in fs:
             tail = set(self.get_hyperedge_tail(hedge))
