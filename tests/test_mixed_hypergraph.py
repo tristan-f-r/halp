@@ -130,6 +130,19 @@ def test_read_copy():
     correct(H)
     correct(H.copy())
 
+def test_symmetric_image():
+    H = MixedHypergraph()
+    H.add_undirected_hyperedge(['A', 'B', 'C'])
+    H.add_directed_hyperedge(['A'], ['B', 'C'])
+
+    assert len(H.get_hyperedge_id_set()) == 2
+
+    new_H = H.get_symmetric_image()
+    assert len(new_H.get_hyperedge_id_set()) == 2
+
+    new_H.get_undirected_hyperedge_id(['A', 'B', 'C'])
+    new_H.get_directed_hyperedge_id(['B', 'C'], ['A'])
+
 def test_write():
     H = MixedHypergraph()
     H.add_nodes(['A', 'B', 'C'])

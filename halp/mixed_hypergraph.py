@@ -1270,12 +1270,12 @@ class MixedHypergraph(object):
         # Reverse the tail and head (and __frozen_tail and __frozen_head) for
         # every hyperedge
         for hyperedge_id in self.get_hyperedge_id_set():
-            # WIP check if hyperedges are undirected beforehand
-            attr_dict = new_H._hyperedge_attributes[hyperedge_id]
-            attr_dict["tail"], attr_dict["head"] = \
-                attr_dict["head"], attr_dict["tail"]
-            attr_dict["__frozen_tail"], attr_dict["__frozen_head"] = \
-                attr_dict["__frozen_head"], attr_dict["__frozen_tail"]
+            if self.is_hyperedge_id_directed(hyperedge_id):
+                attr_dict = new_H._hyperedge_attributes[hyperedge_id]
+                attr_dict["tail"], attr_dict["head"] = \
+                    attr_dict["head"], attr_dict["tail"]
+                attr_dict["__frozen_tail"], attr_dict["__frozen_head"] = \
+                    attr_dict["__frozen_head"], attr_dict["__frozen_tail"]
 
         # Reverse the definition of forward star and backward star
         new_H._forward_star, new_H._backward_star = \
