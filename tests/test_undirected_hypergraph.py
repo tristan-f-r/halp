@@ -377,6 +377,21 @@ def test_remove_nodes(UndirectedHypergraphLike):
     assert "e3" not in H._hyperedge_attributes
     assert frozen_nodes3 not in H._node_set_to_hyperedge
 
+def test_trim_nodes(UndirectedHypergraphLike):
+    H = UndirectedHypergraphLike()
+    add_hyperedge(H, ['A', 'B', 'C'])
+    add_hyperedge(H, ['C', 'D'])
+
+    H.trim_node('C')
+
+    assert len(H.get_hyperedge_id_set()) == 2
+    get_hyperedge_id(H, ['A', 'B'])
+    get_hyperedge_id(H, ['D'])
+
+    H.trim_node('D')
+
+    assert len(H.get_hyperedge_id_set()) == 1
+    get_hyperedge_id(H, ['A', 'B'])
 
 def test_get_hyperedge_id(UndirectedHypergraphLike):
     node_a = 'A'
