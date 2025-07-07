@@ -78,16 +78,57 @@ def test_read_invalid_direction():
     except BaseException as e:
         assert False, e
 
-def test_read():
+def test_overlapping():
+    H = MixedHypergraph()
+    H.add_undirected_hyperedge(['A', 'B', 'C'])
+    H.add_undirected_hyperedge(['A', 'C', 'B'])
+    H.add_directed_hyperedges([(['A', 'B'], ['C']),
+                               (['A'], ['B', 'C']),
+                               (['A'], ['C', 'B'])])
+    
+    assert len(H.get_hyperedge_id_set()) == 3
+
+def test_get_hyperedge_nodes():
+    H = MixedHypergraph()
+    id = H.add_directed_hyperedge(['A', 'C'], ['B'])
+    assert H.get_hyperedge_nodes(id) == set(['A', 'B', 'C'])
+
+def test_trim_node():
+    H = MixedHypergraph()
+    H.add_undirected_hyperedge(['A', 'B', 'C'])
+    H.add_directed_hyperedge(['A'], ['B', 'C'])
+    H.trim_nodes(['C'])
+
+    assert len(H.get_node_set()) == 2
+    assert len(H.get_hyperedge_id_set()) == 2
+
+    H.get_undirected_hyperedge_id(['A', 'B'])
+    H.get_directed_hyperedge_id(['A'], ['B'])
+
+    H.trim_node('B')
+
+    assert len(H.get_node_set()) == 1
+    assert len(H.get_hyperedge_id_set()) == 1
+
+    H.get_undirected_hyperedge_id(['A'])
+
+def test_read_copy():
     H = MixedHypergraph()
     H.read("tests/data/basic_mixed_hypergraph.txt")
 
-    # correctness checks
-    H.get_undirected_hyperedge_id(['s', 'y', 'x'])
-    H.get_undirected_hyperedge_id(['x', 's'])
-    H.get_undirected_hyperedge_id(['a', 'u', 't'])
+    def correct(G):
+        # correctness checks
+        assert len(H.get_hyperedge_id_set()) == 8
+        assert len(H.get_node_set()) == 8
 
-    H.get_directed_hyperedge_id(['s'], ['x'])
+        G.get_undirected_hyperedge_id(['s', 'y', 'x'])
+        G.get_undirected_hyperedge_id(['x', 's'])
+        G.get_undirected_hyperedge_id(['a', 'u', 't'])
+
+        G.get_directed_hyperedge_id(['s'], ['x'])
+    
+    correct(H)
+    correct(H.copy())
 
 def test_write():
     H = MixedHypergraph()
