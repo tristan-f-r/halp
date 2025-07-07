@@ -1,6 +1,6 @@
 tail	head	direction	weight
 s	x	D	1
-s	y,x	u	2
+x,s	y,x	u	2
 s	z	D	2
 z,y,x	u,t	d	3
 a,u,t		U	1
