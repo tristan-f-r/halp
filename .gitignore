@@ -57,3 +57,4 @@ docs/_build/
 # Test artifacts
 test_directed_read_and_write.txt
 test_undirected_read_and_write.txt
+test_mixed_read_and_write.txt

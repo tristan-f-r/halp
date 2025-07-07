@@ -41,6 +41,17 @@ def get_hyperedge_id(graph, nodes):
     else:
         raise ValueError()
 
+def get_hyperedge_nodes(graph, nodes):
+    """
+    Adds hyperedges to an instance produced by UndirectedHypergraphLike.
+    """
+    if type(graph) == UndirectedHypergraph:
+        return graph.get_hyperedge_id(nodes)
+    elif type(graph) == MixedHypergraph:
+        return graph.get_undirected_hyperedge_id(nodes)
+    else:
+        raise ValueError()
+
 def test_add_node(UndirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'

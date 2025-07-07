@@ -38,6 +38,22 @@ def get_hyperedge_id(graph, tail, head):
     else:
         raise ValueError()
 
+def get_hyperedge_head(graph, id):
+    if type(graph) == DirectedHypergraph:
+        return graph.get_hyperedge_head(id)
+    elif type(graph) == MixedHypergraph:
+        return graph.get_directed_hyperedge_head(id)
+    else:
+        raise ValueError()
+
+def get_hyperedge_tail(graph, id):
+    if type(graph) == DirectedHypergraph:
+        return graph.get_hyperedge_tail(id)
+    elif type(graph) == MixedHypergraph:
+        return graph.get_directed_hyperedge_tail(id)
+    else:
+        raise ValueError()
+
 def test_add_node(DirectedHypergraphLike):
     node_a = 'A'
     node_b = 'B'
@@ -583,8 +599,8 @@ def test_get_hyperedge_tail(DirectedHypergraphLike):
     hyperedge_names = \
         add_hyperedges(H, hyperedges, common_attrib, color='white')
 
-    retrieved_tail1 = H.get_hyperedge_tail('e1')
-    retrieved_tail2 = H.get_hyperedge_tail('e2')
+    retrieved_tail1 = get_hyperedge_tail(H, 'e1')
+    retrieved_tail2 = get_hyperedge_tail(H, 'e2')
     assert retrieved_tail1 == tail1
     assert retrieved_tail2 == tail2
 
@@ -614,8 +630,8 @@ def test_get_hyperedge_head(DirectedHypergraphLike):
     hyperedge_names = \
         add_hyperedges(H, hyperedges, common_attrib, color='white')
 
-    retrieved_head1 = H.get_hyperedge_head('e1')
-    retrieved_head2 = H.get_hyperedge_head('e2')
+    retrieved_head1 = get_hyperedge_head(H, 'e1')
+    retrieved_head2 = get_hyperedge_head(H, 'e2')
     assert retrieved_head1 == head1
     assert retrieved_head2 == head2
 
@@ -961,14 +977,14 @@ def test_read_and_write():
     assert H._node_attributes.keys() == new_H._node_attributes.keys()
 
     for new_hyperedge_id in new_H.get_hyperedge_id_set():
-        new_hyperedge_tail = new_H.get_hyperedge_tail(new_hyperedge_id)
-        new_hyperedge_head = new_H.get_hyperedge_head(new_hyperedge_id)
+        new_hyperedge_tail = get_hyperedge_tail(new_H, new_hyperedge_id)
+        new_hyperedge_head = get_hyperedge_head(new_H, new_hyperedge_id)
         new_hyperedge_weight = new_H.get_hyperedge_weight(new_hyperedge_id)
 
         found_matching_hyperedge = False
         for hyperedge_id in H.get_hyperedge_id_set():
-            hyperedge_tail = H.get_hyperedge_tail(hyperedge_id)
-            hyperedge_head = H.get_hyperedge_head(hyperedge_id)
+            hyperedge_tail = get_hyperedge_tail(H, hyperedge_id)
+            hyperedge_head = get_hyperedge_head(H, hyperedge_id)
             hyperedge_weight = H.get_hyperedge_weight(hyperedge_id)
 
             if new_hyperedge_tail == hyperedge_tail and \
@@ -992,7 +1008,7 @@ def test_read_and_write():
         assert False, e
 
 
-def test_check_hyperedge_attributes_consistency(DirectedHypergraphLike):
+def test_check_hyperedge_attributes_consistency():
     # make test hypergraph
     node_a = 'A'
     node_b = 'B'
@@ -1004,7 +1020,7 @@ def test_check_hyperedge_attributes_consistency(DirectedHypergraphLike):
 
     node_d = 'D'
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -1107,7 +1123,7 @@ def test_check_hyperedge_attributes_consistency(DirectedHypergraphLike):
         assert False, e
 
 
-def test_check_node_attributes_consistency(DirectedHypergraphLike):
+def test_check_node_attributes_consistency():
     # make test hypergraph
     node_a = 'A'
     node_b = 'B'
@@ -1119,7 +1135,7 @@ def test_check_node_attributes_consistency(DirectedHypergraphLike):
 
     node_d = 'D'
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -1201,7 +1217,7 @@ def test_check_predecessor_successor_consistency(DirectedHypergraphLike):
 
     node_d = 'D'
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -1264,7 +1280,7 @@ def test_check_predecessor_successor_consistency(DirectedHypergraphLike):
         assert False, e
 
 
-def test_check_hyperedge_id_consistency(DirectedHypergraphLike):
+def test_check_hyperedge_id_consistency():
     # make test hypergraph
     node_a = 'A'
     node_b = 'B'
@@ -1276,7 +1292,7 @@ def test_check_hyperedge_id_consistency(DirectedHypergraphLike):
 
     node_d = 'D'
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -1345,7 +1361,7 @@ def test_check_hyperedge_id_consistency(DirectedHypergraphLike):
         assert False, e
 
 
-def test_check_node_consistency(DirectedHypergraphLike):
+def test_check_node_consistency():
     # make test hypergraph
     node_a = 'A'
     node_b = 'B'
@@ -1357,7 +1373,7 @@ def test_check_node_consistency(DirectedHypergraphLike):
 
     node_d = 'D'
 
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     H.add_nodes(node_list, common_attrib)
 
     tail1 = set([node_a, node_b])
@@ -1488,7 +1504,8 @@ def test_get_symmetric_image(DirectedHypergraphLike):
 
     sym_H = H.get_symmetric_image()
 
-    sym_H._check_consistency()
+    if type(sym_H) == DirectedHypergraph:
+        sym_H._check_consistency()
 
     assert sym_H._node_attributes == H._node_attributes
 
@@ -1519,8 +1536,12 @@ def test_get_symmetric_image(DirectedHypergraphLike):
 
 
 def test_get_induced_subhypergraph(DirectedHypergraphLike):
-    H = DirectedHypergraphLike()
+    H = DirectedHypergraph()
     H.read("tests/data/basic_directed_hypergraph.txt")
+    if DirectedHypergraphLike == MixedHypergraph:
+        new_H = MixedHypergraph()
+        new_H.extend_directed_hypergraph(H)
+        new_H = H
 
     induce_on_nodes = H.get_node_set() - {'t'}
     induced_H = H.get_induced_subhypergraph(induce_on_nodes)
@@ -1528,8 +1549,8 @@ def test_get_induced_subhypergraph(DirectedHypergraphLike):
     induced_nodes = induced_H.get_node_set()
     assert induced_nodes == H.get_node_set() - {'t'}
 
-    hyperedges = [(induced_H.get_hyperedge_tail(hyperedge_id),
-                   induced_H.get_hyperedge_head(hyperedge_id))
+    hyperedges = [(get_hyperedge_tail(induced_H, hyperedge_id),
+                   get_hyperedge_head(induced_H, hyperedge_id))
                   for hyperedge_id in induced_H.get_hyperedge_id_set()]
     for hyperedge in hyperedges:
         tail, head = hyperedge

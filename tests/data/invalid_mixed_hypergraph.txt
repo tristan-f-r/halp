@@ -1,0 +1,9 @@
+tail	head	direction	weight
+s	x	D	1
+s	y,x	u	2
+s	z	D	2
+
+a,u,t		U	1
+	x,s		1
+b,t	a	D	1
+s	t	D	100
