@@ -1141,13 +1141,13 @@ class MixedHypergraph(object):
         return self._star[node].copy()
 
     def get_successors(self, tail):
-        """Given a tail set of nodes, get a list of edges of which the node
-        set is the tail of each edge.
+        """Given a tail set of nodes, get a list of directed hyperedges of
+        which the node set is the tail of each edge.
 
         :param tail: set of nodes that correspond to the tails of some
                         (possibly empty) set of edges.
-        :returns: set -- hyperedge_ids of the hyperedges that have tail
-                in the tail.
+        :returns: set -- hyperedge_ids of the directed hyperedges that have
+                tail in the tail.
 
         """
         frozen_tail = frozenset(tail)
@@ -1159,13 +1159,13 @@ class MixedHypergraph(object):
         return set(self._successors[frozen_tail].values())
 
     def get_predecessors(self, head):
-        """Given a head set of nodes, get a list of edges of which the node set
-        is the head of each edge.
+        """Given a head set of nodes, get a list of directed hyperedges
+        of which the node set is the head of each edge.
 
         :param head: set of nodes that correspond to the heads of some
                         (possibly empty) set of edges.
-        :returns: set -- hyperedge_ids of the hyperedges that have head
-                in the head.
+        :returns: set -- hyperedge_ids of the directed hyperedges that have
+                head in the head.
         """
         frozen_head = frozenset(head)
         # If this node set isn't any head in the hypergraph, then it has
