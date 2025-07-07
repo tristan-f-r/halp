@@ -30,13 +30,13 @@ def stationary_distribution(H, pi=None, P=None):
             it will be created.
     :returns: list -- list of the stationary probabilities for all nodes
             in the hypergraph.
-    :raises: TypeError -- Algorithm only applicable to undirected hypergraphs
+    :raises: TypeError -- Algorithm only applicable to directed hypergraphs
     :raises: AssertionError -- Each node must have at least 1 outgoing
              hyperedge (even if it's only a self-loop).
 
     """
     if not isinstance(H, DirectedHypergraph):
-        raise TypeError("Algorithm only applicable to undirected hypergraphs")
+        raise TypeError("Algorithm only applicable to directed hypergraphs")
 
     for node in H.node_iterator():
         if len(H.get_forward_star(node)) == 0:
